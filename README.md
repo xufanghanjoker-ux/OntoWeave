@@ -1,50 +1,97 @@
-# OntoWeave
+<p align="center">
+  <img src="docs/assets/hero.svg" alt="OntoWeave — A world model for enterprises and agents" width="100%" />
+</p>
 
-Temporal knowledge graphs and traceable memory for people and agents.
+<p align="center">
+  <strong>面向企业与 Agent 的双时态、行动感知世界模型</strong><br />
+  以本体连接知识，以时间保留变化，让行动拥有上下文。
+</p>
 
-为人和Agent构建可追溯、持续演化的时序知识图谱。
+<p align="center">
+  <a href="#理念">理念</a> ·
+  <a href="#三个核心">三个核心</a> ·
+  <a href="#使用场景">使用场景</a> ·
+  <a href="#开始使用">开始使用</a> ·
+  <a href="#接下来的方向">路线图</a>
+</p>
 
-**0.1.0-alpha.1 · 本机单用户Alpha预发布。** 抽取完整性、实体归一和事件表达仍在迭代，不承诺生产可用或基准领先。
+<p align="center">
+  <a href="https://github.com/xufanghanjoker-ux/OntoWeave/releases/tag/v0.1.0-alpha.1"><img alt="Release v0.1.0-alpha.1" src="https://img.shields.io/badge/release-v0.1.0--alpha.1-244b36?style=flat-square" /></a>
+  <a href="LICENSE"><img alt="License Apache 2.0" src="https://img.shields.io/badge/license-Apache--2.0-244b36?style=flat-square" /></a>
+</p>
 
-## 工作方式
+**让企业与 Agent，理解同一个业务世界。**
 
-上传资料 → Docling解析 → 结构与token分块 → CQ发现 → 按需归族 → Codex语义抽取 → 程序接收和保存 → 局部对齐 → 图谱与索引。
+OntoWeave 是一个开源世界模型项目。我们围绕本体、双时态与行动感知，将分散的资料组织为有来源、有关系、有时间的业务知识，为企业和 Agent 提供能够持续更新的共同上下文。
 
-原生Codex承载Agent和Skill；Rust处理事实版本与双时间读取，SQLite保存本机数据。图谱展示对象、关系、属性及来源；对话支持流式回答、Markdown和引用回溯。局部失败保留有效产物并记录缺口，任务完成不代表知识已正确。
+## 理念
 
-## 安装与启动
+企业的世界一直在变化。产品更新，规则调整，职责交接，新的信息也会改变我们对过去的理解。
 
-首发验证目标为macOS本机。Linux、Windows尚未完成安装验收。需要Node.js 22.22+或24.15+、Rust工具链、Python 3.12及原生Codex可执行程序。
+我们希望保留这段变化的过程：一件事是什么，它与什么有关，何时成立，我们何时得知；进一步理解谁采取了行动，之后观察到了什么。
 
-```sh
-git clone https://github.com/xufanghanjoker-ux/OntoWeave.git
-cd OntoWeave
-npm ci
-cargo build --locked -p lightog-core
-npm run setup
-npm run setup:runtime -- --codex=/absolute/path/to/codex
-npm start
-```
+**把事实织成世界，把变化留在时间里。**
 
-setup会提示安装独立Python环境与解析依赖，首次解析可能下载模型权重。setup:runtime仅生成本机协议锁，不调用模型。
+## 三个核心
 
-当前运行验证的Codex版本为**0.169.0-alpha.11.1**，不承诺任意最新版兼容，也不分发桌面应用内二进制。无法取得匹配版本时，此Alpha的Agent链路不可用，不能通过删除运行锁绕过。
+**本体 · 让知识拥有共同语言**
 
-打开 **http://127.0.0.1:4332/**，在设置中配置生成与Embedding服务，创建工作空间并上传资料。生成服务需要兼容当前Codex提供方路径；只支持普通Chat Completions不足以证明可用。现有真实调用使用Qwen北京服务的qwen3.8-flash及Embedding，其他服务待验证。
+围绕对象、类型、关系、属性与规则组织业务知识。让不同资料里的产品、客户、人员与事件逐步连接起来，形成企业与 Agent 都能使用的语义骨架。
 
-运行配置与新数据保存在`.ontoweave/`，不进入源码发布。可用CQFORGE_PORT、CQFORGE_STORAGE指定端口和存储目录；旧数据不自动迁移。旧LightOG/CQForge包名、协议标识和环境变量保留兼容。
+**双时态 · 同时保留事实与认识的历史**
 
-## 开发与限制
+区分事实在现实中何时成立，以及系统何时记录这项认识。一项规则 7 月生效，9 月才被录入：回看 8 月的业务状态与当时已知的信息，需要两条时间线。现实变化与认识更正，都应留下历史。
 
-```sh
-npm run check
-npm run build:web
-```
+**行动感知 · 为变化补上行为上下文**
 
-本地已有缓存不等于干净安装已验证。首发安装检查仍需结算，见[版本说明](docs/RELEASE_NOTES.md)。MCP、行动反馈等研究方案不等于正式交付。存在文本或未绑定值不等于图可直接回答。
+谁在什么条件下，对哪个对象做了什么，随后观察到什么？我们正在将行动与反馈纳入同一份业务表达，为复盘、经验积累和后续决策建立基础。
 
-仅用于本机可信单用户。资料、知识及诊断可能明文保存；不要公开本地端口，或提交密钥、业务资料、数据库和模型权重。见[安全说明](SECURITY.md)。
+<p align="center">
+  <img src="docs/assets/world-model.svg" alt="产品概念：本体连接对象与关系，双时间保留历史，行动连接状态与观测" width="100%" />
+  <sub>产品概念图 · 行动与反馈闭环持续建设中</sub>
+</p>
 
-## 许可证
+## 使用场景
 
-采用[Apache-2.0](LICENSE)。第三方依赖和字体保留各自许可证，见[第三方许可](THIRD_PARTY_NOTICES.md)。设计研究参考Utopia、Graphiti和LightRAG。
+从业务中的具体问题出发，理解 OntoWeave 希望支撑的工作。
+
+| 面向谁 | 关心的问题 | 带来的价值 |
+|---|---|---|
+| **企业业务团队** | “这项规则在当时适用于谁？我们什么时候得知变更？” | 连接业务对象、规则与证据，按两种时间回看事实。 |
+| **研究与运营团队** | “当时依据什么作出判断？后来哪些事实改变了？” | 保留来源和认识更正，为复盘提供可回查的上下文。 |
+| **持续工作的 Agent** | “当前该参考什么？先前做过什么，结果如何？” | 以时态知识为基础，逐步扩展行动记忆与反馈；外部接入仍在建设。 |
+
+## 当前可以体验什么
+
+| 能力 | 体验 |
+|---|---|
+| **从资料建立知识** | 上传资料，发现知识需求，组织对象、关系与属性。 |
+| **探索图谱与本体** | 查看知识之间的联系，并回查对应资料。 |
+| **带依据的对话** | 流式回答、Markdown、句内引用与原文预览。 |
+| **保留变化的历史** | 事实版本、现实变化、认识更正与双时间读取基础。 |
+
+底层采用原生 Codex Agent 与 Skill，结合 Rust 时态内核和本机存储。
+
+> **当前版本：v0.1.0-alpha.1。** 面向 macOS 本机单用户验证；抽取与实体归一质量仍在迭代。行动反馈闭环、外部 Agent MCP 接入及预测尚未完成交付。详见[版本说明](docs/RELEASE_NOTES.md)。
+
+## 开始使用
+
+1. 按[安装与启动指南](docs/GETTING_STARTED.md)准备本机环境并启动 OntoWeave。
+2. 在设置中配置生成与 Embedding 服务，创建工作空间并上传资料。
+3. 探索图谱、提出问题，从引用回到原文。
+
+## 接下来的方向
+
+- **行动与反馈**：连接业务状态、行动记录和观测结果。
+- **Agent 共享记忆**：通过 MCP 向外部 Agent 提供知识读写能力。
+- **基于反馈的学习与预测**：在可追溯记录上逐步验证行动效果与预测能力。
+
+欢迎通过 [Issues](https://github.com/xufanghanjoker-ux/OntoWeave/issues) 分享场景、问题与建议，或参与[贡献](CONTRIBUTING.md)。
+
+---
+
+<p align="center">
+  <strong>Understand the world. Preserve its history. Give actions context.</strong><br />
+  <a href="LICENSE">Apache-2.0</a> · <a href="SECURITY.md">安全说明</a> · <a href="THIRD_PARTY_NOTICES.md">第三方许可</a><br />
+  感谢 Utopia、Graphiti 与 LightRAG 带来的启发。
+</p>
