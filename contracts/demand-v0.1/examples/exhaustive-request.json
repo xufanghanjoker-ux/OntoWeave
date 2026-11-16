@@ -1,0 +1,57 @@
+{
+  "contract_version": "lightog-demand/0.1",
+  "question_id": "q_exhaustive",
+  "text": "列出丁云在资料中的所有交付地区。",
+  "text_sha256": "8a44c4d2a02b6da8d55fd638d5189e76e98458088d3eb10877738d59539edbf4",
+  "intent": "KNOWLEDGE_QUERY",
+  "requirements": [
+    {
+      "id": "r_all",
+      "operation": "LIST",
+      "subjects": {
+        "selector": "EXPLICIT",
+        "members": [
+          {
+            "local_id": "s_d",
+            "label": "丁云",
+            "question_spans": [
+              {
+                "start": 2,
+                "end": 4,
+                "quote": "丁云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          }
+        ]
+      },
+      "target": {
+        "label": "交付地区",
+        "question_spans": [
+          {
+            "start": 11,
+            "end": 15,
+            "quote": "交付地区",
+            "offset_unit": "utf16_code_unit"
+          }
+        ],
+        "predicate_ref": null,
+        "origin": "QUESTION",
+        "context_ref": null
+      },
+      "conditions": [],
+      "structure": null,
+      "coverage_request": {
+        "mode": "ALL_IN_SCOPE",
+        "limit": null
+      },
+      "depends_on": [],
+      "unresolved": []
+    }
+  ],
+  "ambiguities": [],
+  "limitations": []
+}

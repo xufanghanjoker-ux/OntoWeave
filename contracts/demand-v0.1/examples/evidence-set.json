@@ -1,0 +1,59 @@
+{
+  "contract_version": "lightog-demand/0.1",
+  "evidence_set_id": "es_synthetic",
+  "snapshot": {
+    "base_ref": "kb_synthetic",
+    "source_epoch": 1,
+    "graph_revision": null,
+    "sources": [
+      {
+        "source_ref": "src_compare",
+        "source_revision": "src_compare_v1",
+        "original_sha256": "b78d630d377e667d119a98f0ee0c1477cadfca2c4c5e757f1dc87ca947a1bc72",
+        "text_sha256": "b78d630d377e667d119a98f0ee0c1477cadfca2c4c5e757f1dc87ca947a1bc72",
+        "parser_version": "synthetic-text/1"
+      },
+      {
+        "source_ref": "src_new",
+        "source_revision": "src_new_v1",
+        "original_sha256": "17865ad0263da4866d59af0bc57522ec5280863d31416ade601a1010dda0d383",
+        "text_sha256": "17865ad0263da4866d59af0bc57522ec5280863d31416ade601a1010dda0d383",
+        "parser_version": "synthetic-text/1"
+      }
+    ]
+  },
+  "fragments": [
+    {
+      "id": "e_cohort",
+      "origin": "SOURCE_FRAGMENT",
+      "source_ref": "src_compare",
+      "source_revision": "src_compare_v1",
+      "block_ref": "src_compare_b1",
+      "text_sha256": "b78d630d377e667d119a98f0ee0c1477cadfca2c4c5e757f1dc87ca947a1bc72",
+      "span": {
+        "start": 0,
+        "end": 66,
+        "quote": "资料比较了Agent本体和知识图谱本体的定义。Agent本体描述代理的能力与约束。知识图谱本体描述知识概念与关系。作者林某负责本文。",
+        "offset_unit": "utf16_code_unit"
+      },
+      "claim_refs": [],
+      "role": "PRIMARY"
+    },
+    {
+      "id": "e_new",
+      "origin": "SOURCE_FRAGMENT",
+      "source_ref": "src_new",
+      "source_revision": "src_new_v1",
+      "block_ref": "src_new_b1",
+      "text_sha256": "17865ad0263da4866d59af0bc57522ec5280863d31416ade601a1010dda0d383",
+      "span": {
+        "start": 0,
+        "end": 26,
+        "quote": "丁云是客服交付系统，在欧洲面向零售客户提供电话服务。",
+        "offset_unit": "utf16_code_unit"
+      },
+      "claim_refs": [],
+      "role": "PRIMARY"
+    }
+  ]
+}

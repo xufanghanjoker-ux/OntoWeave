@@ -1,0 +1,461 @@
+{
+  "plan_version": "core-baseline-plan/0.1",
+  "created_at": "2026-10-31T06:00:15.852Z",
+  "status": "B1_M1_M6_USER_ACCEPTANCE_COMPLETE",
+  "source_authority": "FROZEN_JS_DIFFERENTIAL_RUST_WORKSPACE_FULL_PRODUCT_TESTS_AND_REAL_HTTP_REPLAY",
+  "baseline_release_status": "USER_ACCEPTANCE_COMPLETED_ISOLATED_CORE_MIGRATION",
+  "production_changed": false,
+  "model_calls_this_work": 0,
+  "current_phase": "MIGRATION_CLOSED_PENDING_SCOPE_DISCUSSION",
+  "next_unit": null,
+  "max_units_in_implementation": 1,
+  "work_categories": [
+    "EQUIVALENT_MIGRATION",
+    "PROTOCOL_UPGRADE",
+    "NEW_CAPABILITY"
+  ],
+  "units": [
+    {
+      "id": "M1",
+      "name": "契约、需求与范围线索校验",
+      "legacy_entries": [
+        {
+          "path": "web/learning-scope.mjs",
+          "symbols": [
+            "validateScope",
+            "mergeScopes"
+          ]
+        },
+        {
+          "path": "web/structure-learning.mjs",
+          "symbols": [
+            "validateStructureIntent"
+          ]
+        },
+        {
+          "path": "web/query-intent.mjs",
+          "symbols": [
+            "validateQueryIntent"
+          ]
+        }
+      ],
+      "rust_reuse": [
+        "crates/lightog-demand",
+        "crates/lightog-core"
+      ],
+      "rust_state": "IMPLEMENTED_IN_UNIFIED_LIGHTOG_CORE",
+      "migration_status": "ISOLATED_COMPLETE_WITH_DECLARED_BOUNDARIES",
+      "tests": [
+        "web/learning-scope.test.mjs",
+        "web/structure-learning.test.mjs",
+        "scripts/test-demand-rust.mjs",
+        "scripts/verify-m1.mjs"
+      ],
+      "deliverable": "生产表示到共享需求契约的显式映射、不可表示状态和差分基线；不把现有共享契约校验称为完整问题理解",
+      "order": 1,
+      "implementation_status": "COMPLETE_FOR_FROZEN_PRODUCTION_SCOPE",
+      "replay_status": "PASS_76_CHECKS_INCLUDING_49_PRODUCTION_CASES",
+      "integration_status": "PASS_ISOLATED_PRODUCT_4323",
+      "adoption_status": "NOT_ADOPTED_IN_DEFAULT_4321_PRODUCT",
+      "verification": "scripts/verify-m1.mjs",
+      "manual_entry": "scripts/m1.mjs",
+      "report": "local-runs/m1-production-20261031/report.json",
+      "documentation": "docs/m1-production-demand-20261031.md",
+      "declared_boundary_differences": 2,
+      "semantic_quality": "NOT_MEASURED",
+      "unified_report": "local-runs/core-migration-20261031/acceptance-report.json"
+    },
+    {
+      "id": "M2",
+      "name": "本体、有限计划校验与执行",
+      "legacy_entries": [
+        {
+          "path": "web/engine.mjs",
+          "symbols": [
+            "normalizeSchemaEnvelope",
+            "validateSchema",
+            "queryPlanIssues",
+            "answerCQ",
+            "answerPlan"
+          ]
+        }
+      ],
+      "rust_reuse": [
+        "crates/lightog-core"
+      ],
+      "rust_state": "IMPLEMENTED_IN_UNIFIED_LIGHTOG_CORE",
+      "migration_status": "ISOLATED_COMPLETE_WITH_DECLARED_BOUNDARIES",
+      "tests": [
+        "web/schema-envelope.test.mjs",
+        "web/structure-learning.test.mjs"
+      ],
+      "deliverable": "旧模板校验、执行及冲突/UNKNOWN行为等价；复合计划另行升级",
+      "order": 2,
+      "implementation_status": "COMPLETE_FOR_FROZEN_PRODUCTION_SCOPE",
+      "replay_status": "PASS_UNIFIED_FROZEN_DIFFERENTIAL",
+      "integration_status": "PASS_ISOLATED_PRODUCT_4323",
+      "adoption_status": "NOT_ADOPTED_IN_DEFAULT_4321_PRODUCT",
+      "unified_report": "local-runs/core-migration-20261031/acceptance-report.json"
+    },
+    {
+      "id": "M3",
+      "name": "候选事实与证据校验",
+      "legacy_entries": [
+        {
+          "path": "web/engine.mjs",
+          "symbols": [
+            "validateClaims",
+            "reuseVerifiedClaimSpans"
+          ]
+        },
+        {
+          "path": "web/evidence.mjs",
+          "symbols": [
+            "alignQuote"
+          ]
+        },
+        {
+          "path": "web/structure-learning.mjs",
+          "symbols": [
+            "normalizeSupportSet",
+            "supportValid",
+            "validateStructureDiscovery"
+          ]
+        }
+      ],
+      "rust_reuse": [
+        "crates/lightog-demand",
+        "crates/lightog-core"
+      ],
+      "rust_state": "IMPLEMENTED_IN_UNIFIED_LIGHTOG_CORE",
+      "migration_status": "ISOLATED_COMPLETE_WITH_DECLARED_BOUNDARIES",
+      "tests": [
+        "web/evidence.test.mjs",
+        "web/structure-learning.test.mjs"
+      ],
+      "deliverable": "事实、角色、原文窗口、类型、限定和ID等价；位置正确与语义支持分别判定",
+      "order": 3,
+      "implementation_status": "COMPLETE_FOR_FROZEN_PRODUCTION_SCOPE",
+      "replay_status": "PASS_UNIFIED_FROZEN_DIFFERENTIAL",
+      "integration_status": "PASS_ISOLATED_PRODUCT_4323",
+      "adoption_status": "NOT_ADOPTED_IN_DEFAULT_4321_PRODUCT",
+      "unified_report": "local-runs/core-migration-20261031/acceptance-report.json"
+    },
+    {
+      "id": "M4",
+      "name": "检索、证据选择与覆盖组织",
+      "legacy_entries": [
+        {
+          "path": "web/source-context.mjs",
+          "symbols": [
+            "contextSources",
+            "extractionUnits",
+            "claimReviewBatches"
+          ]
+        },
+        {
+          "path": "web/learning-index.mjs",
+          "symbols": [
+            "createLearningIndex",
+            "validateLearningPlan"
+          ]
+        },
+        {
+          "path": "web/answer-synthesis.mjs",
+          "symbols": [
+            "buildAnswerEvidence",
+            "validateSynthesis"
+          ]
+        }
+      ],
+      "rust_reuse": [
+        "crates/lightog-retrieval",
+        "crates/lightog-core"
+      ],
+      "rust_state": "IMPLEMENTED_IN_UNIFIED_LIGHTOG_CORE",
+      "migration_status": "ISOLATED_COMPLETE_WITH_DECLARED_BOUNDARIES",
+      "tests": [
+        "web/source-context.test.mjs",
+        "web/learning-index.test.mjs",
+        "web/answer-synthesis.test.mjs"
+      ],
+      "deliverable": "复用可证等价策略；旧候选不自动采用；纯算法与数据库索引读写分开",
+      "order": 4,
+      "implementation_status": "COMPLETE_FOR_FROZEN_PRODUCTION_SCOPE",
+      "replay_status": "PASS_UNIFIED_FROZEN_DIFFERENTIAL",
+      "integration_status": "PASS_ISOLATED_PRODUCT_4323",
+      "adoption_status": "NOT_ADOPTED_IN_DEFAULT_4321_PRODUCT",
+      "unified_report": "local-runs/core-migration-20261031/acceptance-report.json"
+    },
+    {
+      "id": "M5",
+      "name": "增量保留、局部范围与处理维度",
+      "legacy_entries": [
+        {
+          "path": "web/learning-extension.mjs",
+          "symbols": [
+            "validateExtension",
+            "extensionExtractionSchema",
+            "evidenceLearningUnits",
+            "additiveReviewSelection"
+          ]
+        },
+        {
+          "path": "web/learning-index.mjs",
+          "symbols": [
+            "extractionDimension",
+            "createLearningLedger"
+          ]
+        }
+      ],
+      "rust_reuse": [
+        "crates/lightog-core"
+      ],
+      "rust_state": "IMPLEMENTED_IN_UNIFIED_LIGHTOG_CORE",
+      "migration_status": "ISOLATED_COMPLETE_WITH_DECLARED_BOUNDARIES",
+      "tests": [
+        "web/learning-extension.test.mjs",
+        "web/continuous-learning.test.mjs"
+      ],
+      "deliverable": "旧对象不变式、定向范围和去重/收据判断等价；数据库事务仍由服务端执行",
+      "order": 5,
+      "implementation_status": "COMPLETE_FOR_FROZEN_PRODUCTION_SCOPE",
+      "replay_status": "PASS_UNIFIED_FROZEN_DIFFERENTIAL",
+      "integration_status": "PASS_ISOLATED_PRODUCT_4323",
+      "adoption_status": "NOT_ADOPTED_IN_DEFAULT_4321_PRODUCT",
+      "unified_report": "local-runs/core-migration-20261031/acceptance-report.json"
+    },
+    {
+      "id": "M6",
+      "name": "评审和发布的纯规则",
+      "legacy_entries": [
+        {
+          "path": "fixtures/tools/evaluator-gate.mjs",
+          "symbols": [
+            "diagnoseReview",
+            "decideReview"
+          ]
+        },
+        {
+          "path": "web/review-protocol.mjs",
+          "symbols": [
+            "compileReview"
+          ]
+        },
+        {
+          "path": "web/component-publication.mjs",
+          "symbols": [
+            "planComponentPublication"
+          ]
+        },
+        {
+          "path": "web/knowledge-governance.mjs",
+          "symbols": [
+            "createGovernance"
+          ]
+        }
+      ],
+      "rust_reuse": [
+        "crates/lightog-core"
+      ],
+      "rust_state": "IMPLEMENTED_IN_UNIFIED_LIGHTOG_CORE",
+      "migration_status": "ISOLATED_COMPLETE_WITH_DECLARED_BOUNDARIES",
+      "tests": [
+        "web/component-publication.test.mjs",
+        "web/knowledge-governance.test.mjs"
+      ],
+      "deliverable": "仅分离纯判断；权限、来源epoch及基版重检和提交事务留服务端",
+      "order": 6,
+      "implementation_status": "COMPLETE_FOR_FROZEN_PRODUCTION_SCOPE",
+      "replay_status": "PASS_UNIFIED_FROZEN_DIFFERENTIAL",
+      "integration_status": "PASS_ISOLATED_PRODUCT_4323",
+      "adoption_status": "NOT_ADOPTED_IN_DEFAULT_4321_PRODUCT",
+      "unified_report": "local-runs/core-migration-20261031/acceptance-report.json"
+    }
+  ],
+  "contracts": {
+    "reuse": "contracts/demand-v0.1/schema.json",
+    "boundary_document": "contracts/core-baseline-v0.1/README.md",
+    "illustrations": "contracts/core-baseline-v0.1/design-examples.json",
+    "illustration_status": "DESIGN_ONLY_NOT_EXECUTABLE",
+    "unified_runtime": {
+      "wire_version": "lightog-core/0.1",
+      "documentation": "crates/lightog-core/README.md",
+      "status": "IMPLEMENTED_ISOLATED_INTEGRATED",
+      "domain_demand_schema_changed": false
+    }
+  },
+  "known_blockers": [
+    {
+      "id": "QF-01",
+      "status": "OPEN_BLOCKS_END_TO_END_ACCEPTANCE",
+      "evidence": "local-runs/cq-quick-acceptance-20261031/response-10.json",
+      "work_category": "NEW_CAPABILITY",
+      "description": "并列主体/目标的问题族未稳定形成有效可执行结果"
+    },
+    {
+      "id": "QP-01",
+      "status": "OPEN_BLOCKS_END_TO_END_ACCEPTANCE",
+      "evidence": "local-runs/cq-quick-acceptance-20261031/response-17.json",
+      "additional_evidence": "local-runs/cq-quick-acceptance-20261031/response-10.json",
+      "work_category": "PROTOCOL_UPGRADE",
+      "description": "多目标/多谓词不能靠重复旧CQ计划或空谓词COMPARE表示"
+    }
+  ],
+  "gates": [
+    {
+      "id": "B0",
+      "status": "DOCUMENTED_AND_STRUCTURALLY_CHECKED",
+      "meaning": "清点和设计，不是运行验收"
+    },
+    {
+      "id": "B1",
+      "status": "PASS_ISOLATED_M1_M6_AND_EXISTING_PRODUCT_INTEGRATION",
+      "meaning": "冻结生产能力等价迁移及原有流程隔离集成通过；不含目标新能力或用户真人验收",
+      "user_acceptance": "USER_CONFIRMED_COMPLETE"
+    },
+    {
+      "id": "B2",
+      "status": "DEFERRED_PENDING_SCOPE_DISCUSSION",
+      "meaning": "协议升级与最小闭环隔离集成；已知阻断须解决"
+    },
+    {
+      "id": "B3",
+      "status": "DEFERRED_PENDING_SCOPE_DISCUSSION",
+      "meaning": "统一基线后每次仅一个机制的一轮RSI"
+    }
+  ],
+  "source_snapshots": [
+    {
+      "path": "web/learning-scope.mjs",
+      "sha256": "98c82f4a10ab3bc8c7e131916d14c8b2591de298143fdff7cde87ea5cabf1718"
+    },
+    {
+      "path": "web/structure-learning.mjs",
+      "sha256": "33513211a11689ad0a5d6538be17538007350de4959d173aec38a00ad6f39bc6"
+    },
+    {
+      "path": "web/query-intent.mjs",
+      "sha256": "80402de35bbd1cea8e2f868d498c87bccc1cc1ea992e914a3ab1d85cc5200402"
+    },
+    {
+      "path": "web/engine.mjs",
+      "sha256": "f6f6b72ebdf276ec09079c2a691d6aeae091ffc3f7eb53030ffb59c853940667"
+    },
+    {
+      "path": "web/evidence.mjs",
+      "sha256": "2b8dabe88c04550c12886e901fb7b2961a9fa4540ea879c9f169f6b262bff0a7"
+    },
+    {
+      "path": "web/source-context.mjs",
+      "sha256": "c05360f36bd6137102761a451a1488e0d0f556340730ca5f36df311f32eb99d5"
+    },
+    {
+      "path": "web/learning-index.mjs",
+      "sha256": "d2eac90d13c3443e4a8b8b390dc4d663690ca763ec65dbe4f2e1b4694f2e95c5"
+    },
+    {
+      "path": "web/answer-synthesis.mjs",
+      "sha256": "3aa7e583a1c54ed41a63f9d83bb234e2434b37e7d8c2b1f2a73f0cc047cecbc7"
+    },
+    {
+      "path": "web/learning-extension.mjs",
+      "sha256": "98d7eee54925f9e4b6d72b7cdb489bee714b646f8db17b1c4ad51c2de5fde9ac"
+    },
+    {
+      "path": "fixtures/tools/evaluator-gate.mjs",
+      "sha256": "fe8269bc6a2c33b6a4e72195abbdc197ce26297b1d2cfdd54107062d79e816fe"
+    },
+    {
+      "path": "web/review-protocol.mjs",
+      "sha256": "4dd45817da9a0cc60a14ce78ce8bcd49ba53ab06cd5f4fcaa418b6cdb116b4c4"
+    },
+    {
+      "path": "web/component-publication.mjs",
+      "sha256": "d35b9159146231ff3e2e32dc7fe14bad213f36206463e1a1d09a4a40f4c48cca"
+    },
+    {
+      "path": "web/knowledge-governance.mjs",
+      "sha256": "11741be31acfa85781a7dbbc95bce4710887b2e97b73c481c51c936da0c8836d"
+    },
+    {
+      "path": "contracts/demand-v0.1/schema.json",
+      "sha256": "4b87f3678b87429c571066e11f33cc45c79a1228c2857ac37426f6796c80854f"
+    },
+    {
+      "path": "crates/lightog-demand/src/main.rs",
+      "sha256": "b857b0d560525bf0b500741e940e472a981b927875e6f03a4e2479dd7831d4dc"
+    },
+    {
+      "path": "crates/lightog-retrieval/src/main.rs",
+      "sha256": "d5bd347cd8017879178ee28a78ab85c65b1385addc0e83590d0205fd1f7b3819"
+    },
+    {
+      "path": "Cargo.toml",
+      "sha256": "b662d82403b248581db3542d164e58b142b418fbd4bb45df246d8fbe856a46ae"
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "c35f05c45cd184439c9e71daa4a3d13d4fed3f46aa8c98bd14b55a1728ef01bb"
+    }
+  ],
+  "snapshot_limit": "source_snapshots为B0历史指纹；implementation_snapshots为M1历史指纹；最终交付指纹另见delivery.source_snapshot，不能替代运行验收。",
+  "updated_at": "2026-10-31T08:35:21.383043+00:00",
+  "implementation_snapshots": [
+    {
+      "path": "crates/lightog-demand/src/production.rs",
+      "sha256": "9a7797ebc20d22c98c4fe022c8de4ee272c9a98b076d612f347c9955f79b1d93"
+    },
+    {
+      "path": "crates/lightog-demand/src/bin/lightog-production-demand.rs",
+      "sha256": "adb065ca4913ff1438310e191c6b94aefc6deef98a774e81ebdd68653f67d7a1"
+    },
+    {
+      "path": "crates/lightog-demand/src/lib.rs",
+      "sha256": "328b2b34a99a03ebaf99754f081fdf85ccda1a4902090e0a7427356ec9142796"
+    },
+    {
+      "path": "crates/lightog-demand/Cargo.toml",
+      "sha256": "704a06b59f014654b183ed94543cf4b56c2d4b8f62411ed5b3025951bf8e00bc"
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "cd744ef4243de0d625eb95a757c181b0a8fdabc4d8d8256963b1805986db25a8"
+    }
+  ],
+  "delivery": {
+    "documentation": "docs/rust-core-migration-complete-20261031.md",
+    "url": "http://127.0.0.1:4323/",
+    "report": "local-runs/core-migration-20261031/acceptance-report.json",
+    "http_report": "local-runs/core-migration-20261031/http-smoke.json",
+    "source_snapshot": "local-runs/core-migration-20261031/delivery-snapshot.json",
+    "verify": "npm run verify:rust",
+    "start": "npm run start:rust",
+    "stop": "npm run stop:rust",
+    "differential": 671,
+    "rust_tests": 106,
+    "product_tests": 544,
+    "user_acceptance": "USER_CONFIRMED_COMPLETE",
+    "default_product_switched": false,
+    "algorithm_optimization_rounds": 0,
+    "language_boundary": "Rust确定性核心；JS界面/HTTP/模型与任务编排/可信事务；Python外部文档解析",
+    "binary": "target/release/lightog-core",
+    "build_profile": "release",
+    "real_http_recheck": "node scripts/smoke-rust-product.mjs",
+    "user_acceptance_record": "local-runs/core-migration-20261031/user-acceptance.json"
+  },
+  "preserved_gaps": [
+    "QF-01",
+    "QP-01",
+    "M1_ATOMIC_BINDING_NOT_INFERRED",
+    "TARGET_ORIGINAL_FIRST_ANSWER_AND_BACKGROUND_GRAPH_LEARNING_NOT_ADDED"
+  ],
+  "algorithm_adoption": {
+    "manifest": "contracts/algorithm-adoption-v0.1/manifest.json",
+    "status": "PROCESS_ACCEPTANCE_PASSED",
+    "release": "adopted-v1",
+    "documentation": "docs/algorithm-adoption-20261031.md",
+    "new_algorithm_optimization_rounds": 0,
+    "prior_migration_user_acceptance_unchanged": true
+  }
+}

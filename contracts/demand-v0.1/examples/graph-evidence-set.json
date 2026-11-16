@@ -1,0 +1,45 @@
+{
+  "contract_version": "lightog-demand/0.1",
+  "evidence_set_id": "es_graph_synthetic",
+  "snapshot": {
+    "base_ref": "kb_synthetic",
+    "source_epoch": 1,
+    "graph_revision": "graph_v1",
+    "sources": [
+      {
+        "source_ref": "src_compare",
+        "source_revision": "src_compare_v1",
+        "original_sha256": "b78d630d377e667d119a98f0ee0c1477cadfca2c4c5e757f1dc87ca947a1bc72",
+        "text_sha256": "b78d630d377e667d119a98f0ee0c1477cadfca2c4c5e757f1dc87ca947a1bc72",
+        "parser_version": "synthetic-text/1"
+      },
+      {
+        "source_ref": "src_new",
+        "source_revision": "src_new_v1",
+        "original_sha256": "17865ad0263da4866d59af0bc57522ec5280863d31416ade601a1010dda0d383",
+        "text_sha256": "17865ad0263da4866d59af0bc57522ec5280863d31416ade601a1010dda0d383",
+        "parser_version": "synthetic-text/1"
+      }
+    ]
+  },
+  "fragments": [
+    {
+      "id": "e_graph_new",
+      "origin": "PUBLISHED_CLAIM",
+      "source_ref": "src_new",
+      "source_revision": "src_new_v1",
+      "block_ref": "src_new_b1",
+      "text_sha256": "17865ad0263da4866d59af0bc57522ec5280863d31416ade601a1010dda0d383",
+      "span": {
+        "start": 0,
+        "end": 26,
+        "quote": "丁云是客服交付系统，在欧洲面向零售客户提供电话服务。",
+        "offset_unit": "utf16_code_unit"
+      },
+      "claim_refs": [
+        "claim_d_europe"
+      ],
+      "role": "PRIMARY"
+    }
+  ]
+}

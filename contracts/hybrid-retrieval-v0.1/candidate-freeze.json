@@ -1,0 +1,47 @@
+{
+  "version": "hybrid-retrieval-candidate-freeze/0.1",
+  "candidate": "p3-r3",
+  "frozen_at": "2026-10-31T09:33:11.828463+00:00",
+  "status": "PRE_REAL_EVALUATION_FROZEN",
+  "tests": {
+    "rust": 22,
+    "node_projection": 3
+  },
+  "actual_model_calls": 0,
+  "actual_embedding_calls": 0,
+  "actual_rerank_calls": 0,
+  "holdout_seen_by_implementer": false,
+  "files": [
+    {
+      "path": "crates/lightog-core/src/hybrid_retrieval.rs",
+      "sha256": "659bc5144b95bbbd0653b3e27b018d30d0024872f0e534d2117aa72c1a02afc9"
+    },
+    {
+      "path": "crates/lightog-core/tests/hybrid_retrieval.rs",
+      "sha256": "3f263302e39eeded0b3a4cd5f5a7e6f764327115d9aaad2e4390d3d021f245fb"
+    },
+    {
+      "path": "experiments/lightog-v04/p3/adapter.mjs",
+      "sha256": "f857a6f70869c7b04ac7610d9943f37b8c9bb468501e6f55052b8b984f0137bb"
+    },
+    {
+      "path": "experiments/lightog-v04/p3/adapter.test.mjs",
+      "sha256": "a130db7e80b4b00d528a8c81bac69cfca0234022f2e2e83fa4862328fb927305"
+    },
+    {
+      "path": "contracts/hybrid-retrieval-v0.1/schema.json",
+      "sha256": "2dced3f379be041f72748b9cf6479f38a6cddf43d73136b756357d448c41eed2"
+    },
+    {
+      "path": "contracts/hybrid-retrieval-v0.1/parameters.json",
+      "sha256": "d915b9f6e54dda9602f25d6240d727c614bbf34c2bd60a00ddc98ee59fb463cf"
+    }
+  ],
+  "supersedes": "candidate-freeze-r2.json",
+  "review_changes": [
+    "Rerank fingerprint binds query, snapshot and candidate content.",
+    "Token count receipts bind exact quote and tokenizer; conflicting anchor aliases rejected.",
+    "Used one-hop edge evidence joins the whole-record evidence budget and output navigation dependencies.",
+    "Formal profile component must match retrieval record kind."
+  ]
+}

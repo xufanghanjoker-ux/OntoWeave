@@ -1,0 +1,1598 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lightog:demand:0.1",
+  "title": "LightOG shared demand contract draft 0.1",
+  "$comment": "Proposed specification only; not consumed by the running product. Cross-reference, source and semantic constraints require additional validation.",
+  "$defs": {
+    "QuestionSpan": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 1
+        },
+        "offset_unit": {
+          "const": "utf16_code_unit"
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "quote",
+        "offset_unit"
+      ],
+      "additionalProperties": false
+    },
+    "TypedValue": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "STRING"
+            },
+            "value": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "INTEGER"
+            },
+            "value": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "DECIMAL"
+            },
+            "value": {
+              "type": "string",
+              "pattern": "^(?:0|-?[1-9][0-9]*|-?(?:0|[1-9][0-9]*)\\.[0-9]*[1-9])$"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "BOOLEAN"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "DATE"
+            },
+            "value": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "INSTANT"
+            },
+            "value": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?Z$",
+              "format": "date-time"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "STRING_SET"
+            },
+            "value": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "SubjectTerm": {
+      "type": "object",
+      "properties": {
+        "local_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "question_spans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/QuestionSpan"
+          },
+          "minItems": 0
+        },
+        "entity_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "source_mentions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "evidence_ref": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+              },
+              "span": {
+                "$ref": "#/$defs/SourceSpan"
+              }
+            },
+            "required": [
+              "evidence_ref",
+              "span"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "local_id",
+        "label",
+        "question_spans",
+        "entity_ref",
+        "source_evidence_ids",
+        "source_mentions"
+      ],
+      "additionalProperties": false
+    },
+    "SubjectSelector": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "selector": {
+              "const": "EXPLICIT"
+            },
+            "members": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/SubjectTerm"
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "selector",
+            "members"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "selector": {
+              "const": "DOCUMENT_GROUP"
+            },
+            "group_ref": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "group_mention": {
+              "$ref": "#/$defs/QuestionSpan"
+            },
+            "members": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/SubjectTerm"
+              },
+              "minItems": 1
+            },
+            "basis_evidence_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+              },
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          },
+          "required": [
+            "selector",
+            "group_ref",
+            "group_mention",
+            "members",
+            "basis_evidence_ids"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "selector": {
+              "const": "FAMILY"
+            },
+            "family_ref": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "slot_ref": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+            }
+          },
+          "required": [
+            "selector",
+            "family_ref",
+            "slot_ref"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "selector": {
+              "const": "UNRESOLVED"
+            },
+            "mention": {
+              "$ref": "#/$defs/QuestionSpan"
+            },
+            "ambiguity_ref": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+            }
+          },
+          "required": [
+            "selector",
+            "mention",
+            "ambiguity_ref"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Target": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "question_spans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/QuestionSpan"
+          },
+          "minItems": 0
+        },
+        "predicate_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "origin": {
+          "enum": [
+            "QUESTION",
+            "USER_DEFINITION",
+            "CQ_FAMILY"
+          ]
+        },
+        "context_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "label",
+        "question_spans",
+        "predicate_ref",
+        "origin",
+        "context_ref"
+      ],
+      "additionalProperties": false
+    },
+    "Condition": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "mention": {
+          "$ref": "#/$defs/QuestionSpan"
+        },
+        "field": {
+          "enum": [
+            "TARGET_VALUE",
+            "SCOPE",
+            "UNIT",
+            "MODALITY",
+            "VALID_TIME",
+            "SOURCE_TIME"
+          ]
+        },
+        "operator": {
+          "enum": [
+            "EQ",
+            "NE",
+            "GT",
+            "GE",
+            "LT",
+            "LE",
+            "IN",
+            "NOT_IN",
+            "UNRESOLVED"
+          ]
+        },
+        "value": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TypedValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "interpretation": {
+          "enum": [
+            "FORMALIZED",
+            "UNRESOLVED"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "mention",
+        "field",
+        "operator",
+        "value",
+        "interpretation"
+      ],
+      "additionalProperties": false
+    },
+    "Structure": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "RELATION",
+            "COMBINATION",
+            "COMPARISON",
+            "COMPOSITION"
+          ]
+        },
+        "match": {
+          "enum": [
+            "ALL",
+            "WITHIN",
+            "NOT_APPLICABLE"
+          ]
+        },
+        "roles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": {
+                "enum": [
+                  "SUBJECT",
+                  "OBJECT",
+                  "WHOLE",
+                  "PART",
+                  "DEPENDENT",
+                  "PROVIDER",
+                  "PARTICIPANT"
+                ]
+              },
+              "subject_local_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                },
+                "minItems": 1,
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "role",
+              "subject_local_ids"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0
+        },
+        "directionality": {
+          "enum": [
+            "DIRECTED",
+            "UNDIRECTED",
+            "UNRESOLVED"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "match",
+        "roles",
+        "directionality"
+      ],
+      "additionalProperties": false
+    },
+    "Ambiguity": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mention": {
+          "$ref": "#/$defs/QuestionSpan"
+        },
+        "reason": {
+          "enum": [
+            "IDENTITY",
+            "REFERENCE",
+            "TARGET",
+            "CONDITION_SCOPE",
+            "BOOLEAN_SCOPE",
+            "TIME_INTERPRETATION"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "question",
+        "mention",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "Requirement": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "operation": {
+          "enum": [
+            "EXPLAIN",
+            "LIST",
+            "COMPARE",
+            "FILTER",
+            "RELATION",
+            "RULE"
+          ]
+        },
+        "subjects": {
+          "$ref": "#/$defs/SubjectSelector"
+        },
+        "target": {
+          "$ref": "#/$defs/Target"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Condition"
+          },
+          "minItems": 0
+        },
+        "structure": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Structure"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "coverage_request": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "enum": [
+                "UNSPECIFIED",
+                "EXAMPLES",
+                "ALL_IN_SCOPE"
+              ]
+            },
+            "limit": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "mode",
+            "limit"
+          ],
+          "additionalProperties": false
+        },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "unresolved": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "id",
+        "operation",
+        "subjects",
+        "target",
+        "conditions",
+        "structure",
+        "coverage_request",
+        "depends_on",
+        "unresolved"
+      ],
+      "additionalProperties": false
+    },
+    "QuestionSpec": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "lightog-demand/0.1"
+        },
+        "question_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "text_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "intent": {
+          "enum": [
+            "KNOWLEDGE_QUERY",
+            "ASSISTANT_IDENTITY",
+            "GREETING",
+            "PRODUCT_HELP",
+            "OTHER"
+          ]
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Requirement"
+          },
+          "minItems": 0
+        },
+        "ambiguities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Ambiguity"
+          },
+          "minItems": 0
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+              },
+              "mention": {
+                "$ref": "#/$defs/QuestionSpan"
+              },
+              "reason": {
+                "enum": [
+                  "BOOLEAN_EXPRESSION_UNSUPPORTED",
+                  "TIME_SEMANTICS_UNSUPPORTED",
+                  "OPERATION_UNSUPPORTED"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "mention",
+              "reason"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "contract_version",
+        "question_id",
+        "text",
+        "text_sha256",
+        "intent",
+        "requirements",
+        "ambiguities",
+        "limitations"
+      ],
+      "additionalProperties": false
+    },
+    "CQFamily": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "lightog-demand/0.1"
+        },
+        "family_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "seed_question_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "seed_requirement_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "minItems": 1,
+          "uniqueItems": true,
+          "maxItems": 1
+        },
+        "subject_slot": {
+          "type": "object",
+          "properties": {
+            "slot_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "replace_subject_local_id": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+            },
+            "role": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "slot_id",
+            "replace_subject_local_id",
+            "role"
+          ],
+          "additionalProperties": false
+        },
+        "expansion_policy": {
+          "const": "SAME_ASPECT_ONLY"
+        },
+        "cohort_basis": {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "enum": [
+                "DOCUMENT_CLASSIFICATION",
+                "DOCUMENT_COMPARISON_GROUP",
+                "USER_DEFINED"
+              ]
+            },
+            "evidence_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+              },
+              "minItems": 0,
+              "uniqueItems": true
+            },
+            "user_definition_ref": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "evidence_ids",
+            "user_definition_ref"
+          ],
+          "additionalProperties": false
+        },
+        "condition_transfer": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "condition_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+              },
+              "policy": {
+                "enum": [
+                  "INVARIANT",
+                  "SUBJECT_SPECIFIC",
+                  "REQUIRES_RECHECK"
+                ]
+              }
+            },
+            "required": [
+              "condition_id",
+              "policy"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SubjectTerm"
+          },
+          "minItems": 0
+        },
+        "seed_question_spec_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "contract_version",
+        "family_id",
+        "seed_question_id",
+        "seed_requirement_ids",
+        "subject_slot",
+        "expansion_policy",
+        "cohort_basis",
+        "condition_transfer",
+        "members",
+        "seed_question_spec_sha256"
+      ],
+      "additionalProperties": false
+    },
+    "SourceVersion": {
+      "type": "object",
+      "properties": {
+        "source_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "source_revision": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "original_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "text_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "parser_version": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "source_ref",
+        "source_revision",
+        "original_sha256",
+        "text_sha256",
+        "parser_version"
+      ],
+      "additionalProperties": false
+    },
+    "SourceSnapshot": {
+      "type": "object",
+      "properties": {
+        "base_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "source_epoch": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "graph_revision": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SourceVersion"
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "base_ref",
+        "source_epoch",
+        "graph_revision",
+        "sources"
+      ],
+      "additionalProperties": false
+    },
+    "EvidenceFragment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "origin": {
+          "enum": [
+            "SOURCE_FRAGMENT",
+            "PUBLISHED_CLAIM"
+          ]
+        },
+        "source_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "source_revision": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "block_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "text_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "span": {
+          "$ref": "#/$defs/SourceSpan"
+        },
+        "claim_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "role": {
+          "enum": [
+            "PRIMARY",
+            "CONTEXT",
+            "CONDITION"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "origin",
+        "source_ref",
+        "source_revision",
+        "block_ref",
+        "text_sha256",
+        "span",
+        "claim_refs",
+        "role"
+      ],
+      "additionalProperties": false
+    },
+    "EvidenceSet": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "lightog-demand/0.1"
+        },
+        "evidence_set_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "snapshot": {
+          "$ref": "#/$defs/SourceSnapshot"
+        },
+        "fragments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/EvidenceFragment"
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "contract_version",
+        "evidence_set_id",
+        "snapshot",
+        "fragments"
+      ],
+      "additionalProperties": false
+    },
+    "CoverageReport": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "lightog-demand/0.1"
+        },
+        "coverage_report_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "question_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "question_spec_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "snapshot": {
+          "$ref": "#/$defs/SourceSnapshot"
+        },
+        "requirements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "requirement_id": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+              },
+              "status": {
+                "enum": [
+                  "SATISFIED",
+                  "PARTIAL",
+                  "UNSUPPORTED",
+                  "NEEDS_CLARIFICATION"
+                ]
+              },
+              "basis": {
+                "enum": [
+                  "GRAPH",
+                  "DOCUMENT",
+                  "MIXED",
+                  "NONE"
+                ]
+              },
+              "evidence_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              },
+              "condition_receipts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "condition_id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                    },
+                    "status": {
+                      "enum": [
+                        "APPLIED",
+                        "UNSUPPORTED",
+                        "UNRESOLVED"
+                      ]
+                    },
+                    "receipt_ref": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "condition_id",
+                    "status",
+                    "receipt_ref"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 0
+              },
+              "checked_block_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              },
+              "unsearched_block_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                },
+                "minItems": 0,
+                "uniqueItems": true
+              },
+              "scope_status": {
+                "enum": [
+                  "LOCAL",
+                  "DECLARED_SCOPE_CHECKED"
+                ]
+              },
+              "semantic_coverage": {
+                "enum": [
+                  "NOT_ASSESSED",
+                  "AUDITED_IN_SCOPE"
+                ]
+              },
+              "coverage_receipt_ref": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              },
+              "subject_receipts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "subject_local_id": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                    },
+                    "status": {
+                      "enum": [
+                        "SATISFIED",
+                        "PARTIAL",
+                        "NO_SUPPORT",
+                        "UNRESOLVED"
+                      ]
+                    },
+                    "evidence_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                      },
+                      "uniqueItems": true
+                    }
+                  },
+                  "required": [
+                    "subject_local_id",
+                    "status",
+                    "evidence_ids"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "scope_binding_ref": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "requirement_id",
+              "status",
+              "basis",
+              "evidence_ids",
+              "condition_receipts",
+              "checked_block_refs",
+              "unsearched_block_refs",
+              "scope_status",
+              "semantic_coverage",
+              "coverage_receipt_ref",
+              "reason",
+              "subject_receipts",
+              "scope_binding_ref"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0
+        },
+        "evidence_set_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        }
+      },
+      "required": [
+        "contract_version",
+        "coverage_report_id",
+        "question_id",
+        "question_spec_sha256",
+        "snapshot",
+        "requirements",
+        "evidence_set_ref"
+      ],
+      "additionalProperties": false
+    },
+    "LearningIntent": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "lightog-demand/0.1"
+        },
+        "question_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "question_spec_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "requirement_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "snapshot": {
+          "$ref": "#/$defs/SourceSnapshot"
+        },
+        "access_mode": {
+          "enum": [
+            "QUERY",
+            "LEARN"
+          ]
+        },
+        "learning_requested": {
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "NOT_REQUESTED",
+            "QUEUED",
+            "RUNNING",
+            "PUBLISHED",
+            "WAIT_EVIDENCE",
+            "WAIT_REVIEW",
+            "FAILED",
+            "CANCELLED"
+          ]
+        },
+        "task_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "admission_evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "minItems": 0,
+          "uniqueItems": true
+        },
+        "request_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        }
+      },
+      "required": [
+        "contract_version",
+        "question_id",
+        "question_spec_sha256",
+        "requirement_ids",
+        "snapshot",
+        "access_mode",
+        "learning_requested",
+        "status",
+        "task_ref",
+        "admission_evidence_ids",
+        "request_ref"
+      ],
+      "additionalProperties": false
+    },
+    "AnswerResult": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "lightog-demand/0.1"
+        },
+        "question_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "question_spec_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "snapshot": {
+          "$ref": "#/$defs/SourceSnapshot"
+        },
+        "evidence_set_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "answer_status": {
+          "enum": [
+            "ANSWERED",
+            "PARTIAL",
+            "NEEDS_CLARIFICATION",
+            "NO_RELEVANT_EVIDENCE",
+            "FAILED"
+          ]
+        },
+        "basis": {
+          "enum": [
+            "GRAPH",
+            "DOCUMENT",
+            "MIXED",
+            "NONE"
+          ]
+        },
+        "statements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "evidence_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                },
+                "minItems": 1,
+                "uniqueItems": true
+              },
+              "requirement_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                },
+                "minItems": 1,
+                "uniqueItems": true
+              }
+            },
+            "required": [
+              "id",
+              "text",
+              "evidence_ids",
+              "requirement_ids"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 0
+        },
+        "coverage_report_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "learning_state": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "enum": [
+                "NOT_REQUESTED",
+                "QUEUED",
+                "RUNNING",
+                "PUBLISHED",
+                "WAIT_EVIDENCE",
+                "WAIT_REVIEW",
+                "FAILED",
+                "CANCELLED"
+              ]
+            },
+            "task_ref": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "status",
+            "task_ref"
+          ],
+          "additionalProperties": false
+        },
+        "request_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        }
+      },
+      "required": [
+        "contract_version",
+        "question_id",
+        "question_spec_sha256",
+        "snapshot",
+        "evidence_set_ref",
+        "answer_status",
+        "basis",
+        "statements",
+        "coverage_report_ref",
+        "learning_state",
+        "request_ref"
+      ],
+      "additionalProperties": false
+    },
+    "AccessContext": {
+      "type": "object",
+      "properties": {
+        "base_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "source_epoch": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "access_mode": {
+          "enum": [
+            "QUERY",
+            "LEARN"
+          ]
+        },
+        "learning_requested": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "base_ref",
+        "source_epoch",
+        "access_mode",
+        "learning_requested"
+      ],
+      "additionalProperties": false
+    },
+    "DemandEnvelope": {
+      "type": "object",
+      "properties": {
+        "wire_version": {
+          "const": "lightog-wire/0.1"
+        },
+        "request_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "message_type": {
+          "const": "DEMAND_PROPOSAL"
+        },
+        "payload_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "context": {
+          "$ref": "#/$defs/AccessContext"
+        },
+        "payload": {
+          "$ref": "#/$defs/QuestionSpec"
+        }
+      },
+      "required": [
+        "wire_version",
+        "request_id",
+        "message_type",
+        "payload_sha256",
+        "context",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "SourceSpan": {
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 1
+        },
+        "offset_unit": {
+          "const": "utf16_code_unit"
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "quote",
+        "offset_unit"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/QuestionSpec"
+    },
+    {
+      "$ref": "#/$defs/CQFamily"
+    },
+    {
+      "$ref": "#/$defs/EvidenceSet"
+    },
+    {
+      "$ref": "#/$defs/CoverageReport"
+    },
+    {
+      "$ref": "#/$defs/LearningIntent"
+    },
+    {
+      "$ref": "#/$defs/AnswerResult"
+    },
+    {
+      "$ref": "#/$defs/DemandEnvelope"
+    }
+  ]
+}

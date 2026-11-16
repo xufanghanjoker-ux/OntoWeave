@@ -1,0 +1,30 @@
+/** Host-owned generation policy and deterministic views. No model semantics. */
+import {clone,hash,need,textField} from './cq-discovery-store-v2.mjs';
+export const GENERAL_KNOWLEDGE_POLICY='GENERAL_KNOWLEDGE_V1';
+export const generalKnowledge=value=>value===GENERAL_KNOWLEDGE_POLICY;
+export function currentKnowledge(records){const replaced=new Set(records.filter(r=>generalKnowledge(r.general_knowledge_policy)).flatMap(r=>r.supersedes??[]));return records.filter(r=>!replaced.has(r.record_ref??r.knowledge_ref));}
+/** Separate explicit formatting only; original text/value/unit always survive. */
+export function normalizeExplicitQuantity(value,unit){
+ if(typeof value!=='string'||typeof unit!=='string'||!unit.trim())return null;
+ const original_value=value,original_unit=unit,u=unit.trim(),escaped=u.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),number='[+-]?(?:\\d+(?:\\.\\d+)?|\\.\\d+)',match=value.trim().match(new RegExp('^(<=|>=|<|>|≤|≥|约|超过|不足)?\\s*('+number+')\\s*(?:'+escaped+')?\\s*(以上|以下|余|左右|\\+)?\\s*(?:'+escaped+')?$'));
+ if(!match||!value.includes(u))return null;
+ const comparison_text=[match[1],match[3]].filter(Boolean).join(''),comparison=({'<':'LT','>':'GT','<=':'LE','>=':'GE','≤':'LE','≥':'GE','以上':'GE','以下':'LE'})[comparison_text]??(comparison_text?null:'EQ');
+ return {value:comparison===null?((match[1]??'')+match[2]+(match[3]??'')):match[2],numeric_text:match[2],unit:u,comparison,comparison_text:comparison_text||null,original_value,original_unit,normalization:'EXPLICIT_VALUE_UNIT_FORMAT_ONLY',meaning_inferred:false};
+}
+export function semanticBaseRecords({runId,packages}){
+ return packages.flatMap(p=>p.items.map(item=>({record_ref:'semantic_base_'+hash([runId,p.package_ref,item.semantic_ref]),knowledge_ref:'semantic_base_'+hash([runId,p.package_ref,item.semantic_ref]),run_id:runId,source_snapshot_ref:p.source_snapshot_ref,representation:'EXTRACTED_KNOWLEDGE',answer_authority:'EXTRACTED_KNOWLEDGE',origin_layer:'RETAINED_SEMANTIC_BASE',kind:'SEMANTIC_STATEMENT',text:[item.text,...['quote','participants','values','conditions','uncertainties'].filter(k=>item[k]!==undefined).map(k=>k+': '+JSON.stringify(item[k]))].join('\n'),statement:item.text,source_refs:clone(item.source_refs??p.source_refs),evidence_refs:[],evidence:[],semantic_lineage:{package_ref:p.package_ref,semantic_refs:[item.semantic_ref]},semantic_original:clone(item),coverage_status:'UNASSESSED',general_knowledge_policy:GENERAL_KNOWLEDGE_POLICY})));
+}
+export function knowledgeCompletion({knowledge,gaps=[],windowClosed=false,localReview=null}){
+ const active=currentKnowledge(knowledge),pending=gaps.filter(textField).map(message=>({message,status:/^REUSED_PARTIAL_SEMANTIC_DRAFT_SCOPE_REMAINS$/.test(message)&&windowClosed?'HISTORICAL_RESOLVED':'CURRENT_UNRESOLVED',scope:'CURRENT_WINDOW',basis:'HOST_LIFECYCLE_OR_AGENT_REPORTED_NOT_SEMANTIC_CERTIFICATION'}));
+ return {task_ended:windowClosed,structured:active.filter(k=>k.kind!=='TEXT').length,text_retained:active.filter(k=>k.kind==='TEXT').length,history_records:knowledge.length-active.length,unresolved:pending.filter(g=>g.status==='CURRENT_UNRESOLVED'),gap_history:pending,local_review_ended:localReview?.phase==='FINISHED',semantic_completeness:'UNASSESSED'};
+}
+export function validateGeneralPolicy(value){need(value===null||generalKnowledge(value),'NATIVE_GENERAL_KNOWLEDGE_POLICY_INVALID');return value;}
+/** Risk selection is navigation, never a semantic error classifier. */
+export function selectKnowledgeReview({p,knowledge}){
+ const bySemantic=new Map(p.items.map(item=>[item.semantic_ref,knowledge.filter(k=>k.semantic_lineage?.package_ref===p.package_ref&&k.semantic_lineage.semantic_refs.includes(item.semantic_ref))])),reasons=new Map(),add=(ref,reason)=>reasons.set(ref,[...new Set([...(reasons.get(ref)??[]),reason])]);
+ for(const item of p.items){const linked=bySemantic.get(item.semantic_ref)??[],content=linked.map(k=>JSON.stringify({text:k.text,objects:k.domain?.entities?.map(e=>({name:e.name,description:e.description,entity_type:e.entity_type})),attributes:k.attributes,value:k.raw_value,unit:k.unit,conditions:k.conditions,roles:k.participants?.map(p=>p.role)})).join('\n'),numbers=[...new Set(item.text.match(/\d+(?:\.\d+)?(?:%|％|\+)?/g)??[])];if(!linked.length)add(item.semantic_ref,'NO_SAVED_EXPRESSION');if(numbers.some(n=>!content.includes(n)))add(item.semantic_ref,'EXPLICIT_VALUE_RETENTION_RISK');if(item.text.length>260&&linked.length<=1)add(item.semantic_ref,'COMPOSITE_MEANING_RETENTION_RISK');}
+ for(const record of knowledge){const reason=record.kind==='TEXT'?'TEXT_REMAINDER':record.participants?.length>=2?'MULTIPARTY_ROLES':record.kind==='ATTRIBUTE'&&record.conditions?.length?'ATTRIBUTE_OWNER_AND_SCOPE':null;if(reason)for(const ref of record.semantic_lineage?.semantic_refs??[])add(ref,reason);}
+ const ordinary=[];for(const kind of ['RELATION','ATTRIBUTE','ENTITY']){const candidates=knowledge.filter(k=>k.kind===kind&&!k.semantic_lineage?.semantic_refs.some(ref=>reasons.has(ref))).sort((a,b)=>hash(a.record_ref).localeCompare(hash(b.record_ref))).slice(0,kind==='ENTITY'?1:2);for(const record of candidates){ordinary.push(record.record_ref);for(const ref of record.semantic_lineage?.semantic_refs??[])add(ref,kind==='RELATION'?'STRUCTURED_PAIR_SAMPLE':kind==='ATTRIBUTE'?'ATTRIBUTE_OWNERSHIP_SAMPLE':'ORDINARY_EXPRESSION_SAMPLE');}}
+ const semantic_refs=[...reasons.keys()].filter(ref=>p.items.some(i=>i.semantic_ref===ref)),targets=knowledge.flatMap((record,index)=>{const selected=record.semantic_lineage?.semantic_refs.filter(ref=>reasons.has(ref))??[];return record.kind==='TEXT'||selected.length||ordinary.includes(record.record_ref)?[{record,index,reasons:[...new Set(selected.flatMap(ref=>reasons.get(ref)))],text_only:record.kind==='TEXT'}]:[];});
+ return {semantic_refs,targets,ordinary_record_refs:ordinary,semantic_reasons:Object.fromEntries(reasons),not_selected_semantic_refs:p.items.map(i=>i.semantic_ref).filter(ref=>!reasons.has(ref)),selection_is_not_error_or_completeness_judgment:true};
+}

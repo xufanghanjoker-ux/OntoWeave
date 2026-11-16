@@ -1,0 +1,43 @@
+/** Host closure evidence for ended native executions, never a model success receipt. */
+import {hash,clone,need} from './cq-discovery-store-v2.mjs';
+import * as businessArguments from './native-tool-arguments-v1.mjs';
+import {createHash} from 'node:crypto';
+export const LOCAL_CONTENT_FAILURES=new Set(['NATIVE_TOOL_ARGUMENTS_JSON_INVALID','NATIVE_ROLE_OUTPUT_NOT_SAVED','NATIVE_ROLE_INCOMPLETE','NATIVE_LOCAL_NO_PROGRESS','NATIVE_SEMANTIC_UNSETTLED','NATIVE_ORGANIZATION_UNSETTLED','NATIVE_RELATION_REVIEW_UNSETTLED','NATIVE_SEMANTIC_NO_VALID_CONTENT']);
+export function isLocalContentFailure(code){return LOCAL_CONTENT_FAILURES.has(code);}
+function archivedSemanticCalls(response){
+ need(typeof response?.body_utf8==='string'&&response.complete_body&&response.http_status===200&&!response.redacted&&!response.redaction_error&&createHash('sha256').update(response.body_utf8).digest('hex')===response.body_sha256,'NATIVE_PROGRAM_SEMANTIC_RESPONSE_UNCONFIRMED');
+ const events=response.body_utf8.split(/\r?\n\r?\n/).flatMap(frame=>{const data=frame.split(/\r?\n/).filter(l=>l.startsWith('data:')).map(l=>l.slice(5).trimStart()).join('\n');return !data||data==='[DONE]'?[]:[JSON.parse(data)];}),completed=events.filter(e=>e.type==='response.completed');need(completed.length===1&&completed[0].response?.status==='completed','NATIVE_PROGRAM_SEMANTIC_RESPONSE_UNCONFIRMED');
+ return (completed[0].response.output??[]).filter(c=>c.type==='function_call'&&c.name?.split('__').at(-1)==='lightog_save_semantic_statements').map(call=>{const qualified=c=>c.namespace&&!c.name.startsWith(c.namespace+'__')?c.namespace+'__'+c.name:c.name,deltas=events.filter(e=>e.type==='response.function_call_arguments.delta'&&e.item_id===call.id),copies=events.filter(e=>e.type==='response.function_call_arguments.done'&&e.item_id===call.id).map(e=>e.arguments);for(const event of events.filter(e=>e.type==='response.output_item.done'&&e.item?.id===call.id)){need(event.item.call_id===call.call_id&&qualified(event.item)===qualified(call),'NATIVE_PROGRAM_SEMANTIC_CALL_CHANGED');copies.push(event.item.arguments);}need(typeof call.arguments==='string'&&copies.every(c=>c===call.arguments)&&(!deltas.length||deltas.map(e=>e.delta).join('')===call.arguments),'NATIVE_PROGRAM_SEMANTIC_CALL_CHANGED');return {id:call.id,call_id:call.call_id,name:qualified(call),arguments:call.arguments};});
+}
+export function endedNativeExecution({store,runId,agentScope,receipt}){
+ const actors=store.listRecords('native_agent_invocation_v1').filter(a=>a.run_id===runId&&a.agent_scope===agentScope&&a.invocation_ref===receipt?.invocation_ref);
+ need(actors.length===1,'NATIVE_PARTIAL_ACTOR_AMBIGUOUS');const actor=actors[0],ledger=store.getRecord('native_full_run_v1',runId);
+ need(actor.origin==='CODEX_NATIVE_APP_SERVER'&&Number.isFinite(actor.ended_at)&&Number.isFinite(receipt?.ended_at)&&actor.ended_at===receipt.ended_at&&actor.status===receipt.status&&['SUCCEEDED','FAILED','STOPPED','PARTIAL'].includes(actor.status),'NATIVE_PARTIAL_NATIVE_NOT_ENDED');
+ if(actor.status==='PARTIAL'){const output=store.getRecord('native_agent_partial_output_v1',actor.partial_output_ref),{record_sha256,...body}=output??{};need(output&&record_sha256===hash(body)&&actor.completion_source==='PROGRAM_RETAINED_PARTIAL_OUTPUT'&&output.invocation_ref===actor.invocation_ref&&output.run_id===runId&&output.native_completion?.status==='completed','NATIVE_PARTIAL_NATIVE_NOT_ENDED');}
+ else need(actor.status==='SUCCEEDED'||isLocalContentFailure(actor.reason),'NATIVE_PARTIAL_HARD_FAILURE');
+ need(ledger&&ledger.status!=='UNKNOWN_HOLD'&&ledger.status!=='CANCELLED'&&ledger.status!=='STALE'&&(!['FAILED','STOPPED'].includes(ledger.status)||isLocalContentFailure(ledger.reason)),'NATIVE_PARTIAL_PARENT_HARD_STOP');
+ const own=ledger.attempts.filter(a=>a.agent_scope===agentScope&&a.kind==='GENERATION');
+ need(own.length>0&&own.every(a=>a.outcome==='RETURNED')&&hash(own.map(a=>a.request_ref))===hash(actor.request_refs)&&hash(actor.request_refs)===hash(receipt.request_refs),'NATIVE_PARTIAL_REQUESTS_UNSETTLED');
+ const batches=store.listRecords('native_agent_delivered_tool_batch_v1').filter(b=>b.invocation_ref===actor.invocation_ref);
+ need(batches.every(b=>actor.request_refs.includes(b.request_ref)&&b.calls.every(c=>['COMPLETED','FAILED'].includes(c.status))),'NATIVE_PARTIAL_TOOLS_UNSETTLED');
+ return {actor:clone(actor),actor_sha256:hash(actor),ledger_run_id:runId,request_refs:clone(actor.request_refs),tool_batch_pins:batches.map(b=>({request_ref:b.request_ref,sha256:hash(b)}))};
+}
+/** Read only archived public calls. No raw reasoning is interpreted or exported. */
+export function prepareProgramSemanticRecovery({store,runId,window,head}){
+ const scope=window.window_ref+':SEMANTIC',actors=store.listRecords('native_agent_invocation_v1').filter(a=>a.run_id===runId&&a.agent_scope===scope);
+ need(actors.length===1,'NATIVE_PARTIAL_ACTOR_AMBIGUOUS');const execution=endedNativeExecution({store,runId,agentScope:scope,receipt:actors[0]}),saved=new Set((head?.proposals??[]).map(p=>store.getRecord('native_semantic_proposal_v1',p.proposal_ref)).filter(Boolean).map(p=>hash(p.raw))),calls=[],unrecovered=[];
+ for(const requestRef of execution.request_refs){const response=store.getRecord('native_agent_response_v1',requestRef);if(!response)continue;
+  need(response.invocation_ref===actors[0].invocation_ref&&response.complete_body===true&&response.http_status===200&&!response.redacted&&!response.redaction_error,'NATIVE_PROGRAM_SEMANTIC_RESPONSE_UNCONFIRMED');
+  for(const call of archivedSemanticCalls(response)){need(typeof call.arguments==='string'&&typeof call.call_id==='string','NATIVE_PROGRAM_SEMANTIC_CALL_CHANGED');
+   const policy=businessArguments.businessArgumentPolicy(['lightog_save_semantic_statements'],{retainBusinessOutput:true,recoverBusinessItems:true}).tools.lightog_save_semantic_statements,normalized=businessArguments.normalizeBusinessArguments(call.arguments,policy);if(normalized?.status==='UNPARSED_BUSINESS_RETAINED'||normalized?.status==='UNRECOVERABLE'){unrecovered.push({request_ref:requestRef,call_id:call.call_id,raw_arguments_sha256:hash(call.arguments),status:normalized.status,received_count:null,skipped_count:null});continue;}const args=JSON.parse(normalized?.normalized??call.arguments);
+   if(!Array.isArray(args?.statements)){unrecovered.push({request_ref:requestRef,call_id:call.call_id,raw_arguments_sha256:hash(call.arguments),status:'NO_STATEMENTS_ARRAY',received_count:null,skipped_count:null});continue;}if(saved.has(hash(args)))continue;saved.add(hash(args));
+   calls.push({request_ref:requestRef,call_id:call.call_id,invocation_ref:actors[0].invocation_ref,source_run_id:runId,source_response_sha256:response.body_sha256,raw_arguments_sha256:hash(call.arguments),raw_arguments:call.arguments,args:clone(args),arguments_sha256:hash(args),normalization:clone(normalized),recovery:{status:normalized?.status??'PARSED_VALID',statuses:[normalized?.status??'PARSED_VALID'],partial:normalized?.status==='BUSINESS_ITEMS_RECOVERED',raw_retained:true,received_count:normalized?.item_recovery?.received_count??(normalized?.status==='BUSINESS_ITEMS_RECOVERED'?null:args.statements.length),recovered_count:normalized?.item_recovery?.recovered_count??0,skipped_count:normalized?.item_recovery?.skipped_count??(normalized?.status==='BUSINESS_ITEMS_RECOVERED'?null:0),bad_fragment_count:normalized?.item_recovery?.bad_fragment_count??0,warnings:normalized?.warnings??[]}});
+  }
+ }
+ return {version:'PROGRAM_SETTLED_SEMANTIC_V1',source_run_id:runId,window_sha256:hash(window),head_sha256:hash(head),execution,calls,unrecovered_calls:unrecovered,recoverable_item_count:calls.reduce((n,c)=>n+c.args.statements.length,0),coverage:'PARTIAL_NOT_REDISCOVERED'};
+}
+export function readProgramSemanticImport({store,ref,stageId,args}){
+ const p=store.getRecord('native_program_semantic_import_v1',ref),{record_sha256,...body}=p??{};need(p&&record_sha256===hash(body)&&p.stage_id===stageId&&ref==='program_semantic_import_'+hash([stageId,p.origin.request_ref,p.origin.call_id])&&p.arguments_sha256===hash(args),'NATIVE_PROGRAM_SEMANTIC_IMPORT_CHANGED');
+ const response=store.getRecord('native_agent_response_v1',p.origin.request_ref),call=archivedSemanticCalls(response).find(c=>c.call_id===p.origin.call_id);need(response?.body_sha256===p.origin.source_response_sha256&&call&&hash(call.arguments)===p.origin.raw_arguments_sha256,'NATIVE_PROGRAM_SEMANTIC_ORIGIN_CHANGED');
+ const execution=endedNativeExecution({store,runId:p.execution.ledger_run_id,agentScope:p.agent_scope,receipt:p.execution.actor});need(hash(execution)===hash(p.execution),'NATIVE_PROGRAM_SEMANTIC_ORIGIN_CHANGED');return clone(p);
+}

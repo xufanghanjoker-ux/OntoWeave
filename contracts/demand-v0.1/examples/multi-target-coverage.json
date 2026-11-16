@@ -1,0 +1,84 @@
+{
+  "contract_version": "lightog-demand/0.1",
+  "coverage_report_id": "coverage_multi",
+  "question_id": "q_multi",
+  "question_spec_sha256": "849c1750ad66105432e7247c9407777e359e714f3251838aa4bb9b000dec8acd",
+  "snapshot": {
+    "base_ref": "kb_synthetic",
+    "source_epoch": 1,
+    "graph_revision": null,
+    "sources": [
+      {
+        "source_ref": "src_compare",
+        "source_revision": "src_compare_v1",
+        "original_sha256": "b78d630d377e667d119a98f0ee0c1477cadfca2c4c5e757f1dc87ca947a1bc72",
+        "text_sha256": "b78d630d377e667d119a98f0ee0c1477cadfca2c4c5e757f1dc87ca947a1bc72",
+        "parser_version": "synthetic-text/1"
+      },
+      {
+        "source_ref": "src_new",
+        "source_revision": "src_new_v1",
+        "original_sha256": "17865ad0263da4866d59af0bc57522ec5280863d31416ade601a1010dda0d383",
+        "text_sha256": "17865ad0263da4866d59af0bc57522ec5280863d31416ade601a1010dda0d383",
+        "parser_version": "synthetic-text/1"
+      }
+    ]
+  },
+  "requirements": [
+    {
+      "requirement_id": "r_region",
+      "status": "PARTIAL",
+      "basis": "NONE",
+      "evidence_ids": [],
+      "condition_receipts": [
+        {
+          "condition_id": "c_exclude",
+          "status": "UNSUPPORTED",
+          "receipt_ref": null
+        }
+      ],
+      "checked_block_refs": [],
+      "unsearched_block_refs": [
+        "src_compare_b1",
+        "src_new_b1"
+      ],
+      "scope_status": "LOCAL",
+      "semantic_coverage": "NOT_ASSESSED",
+      "coverage_receipt_ref": null,
+      "reason": "示例尚未检索，不伪称条件或目标已满足。",
+      "scope_binding_ref": null,
+      "subject_receipts": [
+        {
+          "subject_local_id": "s_a",
+          "status": "PARTIAL",
+          "evidence_ids": []
+        }
+      ]
+    },
+    {
+      "requirement_id": "r_languages",
+      "status": "PARTIAL",
+      "basis": "NONE",
+      "evidence_ids": [],
+      "condition_receipts": [],
+      "checked_block_refs": [],
+      "unsearched_block_refs": [
+        "src_compare_b1",
+        "src_new_b1"
+      ],
+      "scope_status": "LOCAL",
+      "semantic_coverage": "NOT_ASSESSED",
+      "coverage_receipt_ref": null,
+      "reason": "示例尚未检索，不伪称条件或目标已满足。",
+      "scope_binding_ref": null,
+      "subject_receipts": [
+        {
+          "subject_local_id": "s_a",
+          "status": "PARTIAL",
+          "evidence_ids": []
+        }
+      ]
+    }
+  ],
+  "evidence_set_ref": "es_synthetic"
+}

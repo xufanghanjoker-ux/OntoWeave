@@ -1,0 +1,40 @@
+{
+  "version": "hybrid-retrieval-candidate-freeze/0.1",
+  "candidate": "p3-r1",
+  "frozen_at": "2026-10-31T09:24:23.981958+00:00",
+  "status": "PRE_REAL_EVALUATION_FROZEN",
+  "tests": {
+    "rust": 19,
+    "node_projection": 3
+  },
+  "actual_model_calls": 0,
+  "actual_embedding_calls": 0,
+  "actual_rerank_calls": 0,
+  "holdout_seen_by_implementer": false,
+  "files": [
+    {
+      "path": "crates/lightog-core/src/hybrid_retrieval.rs",
+      "sha256": "f97a4fc7958b8facef88356d5fabe64d00ff557b51413513dee461fde54c39c7"
+    },
+    {
+      "path": "crates/lightog-core/tests/hybrid_retrieval.rs",
+      "sha256": "9da533859ae381c7542e15ebf2cd5473cf4c6c15675b530c839eca6d9838b0f8"
+    },
+    {
+      "path": "experiments/lightog-v04/p3/adapter.mjs",
+      "sha256": "f857a6f70869c7b04ac7610d9943f37b8c9bb468501e6f55052b8b984f0137bb"
+    },
+    {
+      "path": "experiments/lightog-v04/p3/adapter.test.mjs",
+      "sha256": "a130db7e80b4b00d528a8c81bac69cfca0234022f2e2e83fa4862328fb927305"
+    },
+    {
+      "path": "contracts/hybrid-retrieval-v0.1/schema.json",
+      "sha256": "b5a2132123fc908c0786ee8a1e9817e52110294ca45f0d95660be46c881e53dc"
+    },
+    {
+      "path": "contracts/hybrid-retrieval-v0.1/parameters.json",
+      "sha256": "d915b9f6e54dda9602f25d6240d727c614bbf34c2bd60a00ddc98ee59fb463cf"
+    }
+  ]
+}

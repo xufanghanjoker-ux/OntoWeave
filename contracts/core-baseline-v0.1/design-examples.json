@@ -1,0 +1,112 @@
+{
+  "design_version": "core-plan-illustrations/0.1",
+  "status": "DESIGN_ONLY_NOT_EXECUTABLE",
+  "not_valid_existing_schema": true,
+  "bindings": "MANUALLY_SPECIFIED_TARGET_DESIGN_NOT_MODEL_OUTPUT",
+  "examples": [
+    {
+      "id": "single_goal_family",
+      "question": "Agent 本体是什么？",
+      "requirements": [
+        {
+          "id": "r_definition",
+          "subject": "Agent 本体",
+          "target": "定义或技术本质",
+          "conditions": []
+        }
+      ],
+      "logical_plan": {
+        "root": "p_agent_definition",
+        "leaves": [
+          {
+            "id": "p_agent_definition",
+            "requirement": "r_definition",
+            "subject": "Agent 本体",
+            "target": "定义或技术本质"
+          }
+        ]
+      },
+      "family_design": {
+        "seed_requirement": "r_definition",
+        "replace": "subject",
+        "candidate_subject": "知识图谱",
+        "admission": "必须引用原文并列讨论依据；具体成员身份和目标证据单独核对",
+        "preserve": [
+          "定义或技术本质目标",
+          "逐条件明确是否可迁移"
+        ],
+        "do_not_infer": [
+          "与Agent本体身份相同",
+          "正式is-a公理",
+          "自动扩展治理对象或核心价值"
+        ]
+      }
+    },
+    {
+      "id": "two_permission_targets",
+      "question": "在航班延误场景下，Agent 本体允许和禁止调用哪些工具？",
+      "requirements": [
+        {
+          "id": "r_allowed",
+          "subject": "Agent 本体",
+          "target": "允许调用的工具",
+          "conditions": [
+            "航班延误场景"
+          ]
+        },
+        {
+          "id": "r_forbidden",
+          "subject": "Agent 本体",
+          "target": "禁止调用的工具",
+          "conditions": [
+            "航班延误场景"
+          ]
+        }
+      ],
+      "logical_plan": {
+        "root": "p_collect",
+        "leaves": [
+          {
+            "id": "p_allowed",
+            "requirement": "r_allowed",
+            "subject": "agent_ontology",
+            "predicate": "allows_calling",
+            "conditions": [
+              "航班延误场景"
+            ],
+            "manual_expected_object": "queryFlightStatus"
+          },
+          {
+            "id": "p_forbidden",
+            "requirement": "r_forbidden",
+            "subject": "agent_ontology",
+            "predicate": "prohibits_calling",
+            "conditions": [
+              "航班延误场景"
+            ],
+            "manual_expected_object": "modifyFlightStatus"
+          }
+        ],
+        "collect": {
+          "id": "p_collect",
+          "children": [
+            "p_allowed",
+            "p_forbidden"
+          ],
+          "result_bindings": {
+            "r_allowed": "p_allowed",
+            "r_forbidden": "p_forbidden"
+          }
+        }
+      },
+      "invariants": [
+        "每个需求有结果绑定或明确缺口",
+        "两个叶子保留同一Agent主体及各自条件",
+        "不使用两个工具作COMPARE主体",
+        "谓词必须已定义且类型兼容",
+        "手工期望值只用于验收，运行不能凭空写入事实",
+        "缺证是UNKNOWN，不推导为允许或禁止"
+      ]
+    }
+  ]
+}

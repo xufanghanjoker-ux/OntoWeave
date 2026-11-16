@@ -1,0 +1,61 @@
+{
+  "contract_version": "lightog-demand/0.1",
+  "question_id": "q_ambiguous",
+  "text": "它在哪里交付？",
+  "text_sha256": "8b1da51daa5c24b11be28fab024ea85d2a23c103245cfb3dc73bbfae5f9c7cca",
+  "intent": "KNOWLEDGE_QUERY",
+  "requirements": [
+    {
+      "id": "r_location",
+      "operation": "EXPLAIN",
+      "subjects": {
+        "selector": "UNRESOLVED",
+        "mention": {
+          "start": 0,
+          "end": 1,
+          "quote": "它",
+          "offset_unit": "utf16_code_unit"
+        },
+        "ambiguity_ref": "a_identity"
+      },
+      "target": {
+        "label": "哪里",
+        "question_spans": [
+          {
+            "start": 2,
+            "end": 4,
+            "quote": "哪里",
+            "offset_unit": "utf16_code_unit"
+          }
+        ],
+        "predicate_ref": null,
+        "origin": "QUESTION",
+        "context_ref": null
+      },
+      "conditions": [],
+      "structure": null,
+      "coverage_request": {
+        "mode": "UNSPECIFIED",
+        "limit": null
+      },
+      "depends_on": [],
+      "unresolved": [
+        "a_identity"
+      ]
+    }
+  ],
+  "ambiguities": [
+    {
+      "id": "a_identity",
+      "question": "你指哪一个系统或版本？",
+      "mention": {
+        "start": 0,
+        "end": 1,
+        "quote": "它",
+        "offset_unit": "utf16_code_unit"
+      },
+      "reason": "REFERENCE"
+    }
+  ],
+  "limitations": []
+}

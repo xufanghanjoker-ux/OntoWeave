@@ -1,0 +1,18 @@
+{
+  "version": "lightog-hybrid-retrieval/0.1",
+  "defaults": {
+    "channel_top_k": 20,
+    "result_top_k": 12,
+    "rrf_k": 60,
+    "max_graph_neighbors": 12,
+    "max_context_utf16": 16000,
+    "max_context_tokens": null,
+    "min_cosine": 0
+  },
+  "fusion": "equal weight 1/(rrf_k+rank), rank starts at 1",
+  "tie_break": "ascending record_id",
+  "graph": "fixed first-pass seed set, one hop, ascending neighbor record_id, no recursive expansion",
+  "whole_evidence": "all new evidence for a record retained or entire record deferred",
+  "rerank": "full exact candidate-set scores or explicit failure fallback",
+  "candidate_change_policy": "Freeze hashes before unseen evaluation; do not tune against holdout outcomes."
+}

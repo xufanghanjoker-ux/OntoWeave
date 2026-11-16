@@ -1,0 +1,2 @@
+# Shared Docling chunking uses the existing Docling environment and local BPE data.
+tiktoken==0.12.0

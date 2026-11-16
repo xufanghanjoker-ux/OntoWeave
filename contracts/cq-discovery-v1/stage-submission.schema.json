@@ -1,0 +1,511 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lightog:cq-stage:v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "work_unit_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "stage": {
+      "enum": [
+        "CQ",
+        "FAMILY",
+        "SCOPE"
+      ]
+    },
+    "input_snapshot_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "upstream_artifact_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version": {
+            "const": 1
+          }
+        },
+        "required": [
+          "artifact_id",
+          "version"
+        ]
+      }
+    },
+    "input_read_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "expected_draft_revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "payload": {
+      "type": "object"
+    },
+    "plan_change_request": {
+      "description": "Advisory; unsupported changes are recorded and refused without losing the stage artifact."
+    }
+  },
+  "required": [
+    "work_unit_id",
+    "stage",
+    "input_snapshot_id",
+    "upstream_artifact_refs",
+    "expected_draft_revision",
+    "idempotency_key",
+    "payload"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "stage": {
+            "const": "CQ"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "local_key": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "source_hints": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "doc_id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "revision": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "block_id": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "doc_id",
+                          "revision"
+                        ]
+                      }
+                    },
+                    "notes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "question": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "knowledge_target": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "origin": {
+                      "enum": [
+                        "DOCUMENT",
+                        "USER",
+                        "MODEL_IDEA"
+                      ]
+                    },
+                    "operation_hint": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "local_key",
+                    "question",
+                    "knowledge_target",
+                    "origin"
+                  ]
+                }
+              },
+              "open_questions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "required": [
+              "items"
+            ]
+          }
+        },
+        "required": [
+          "input_read_refs"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "stage": {
+            "const": "FAMILY"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "families": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "local_key": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "source_hints": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "doc_id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "revision": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "block_id": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "doc_id",
+                          "revision"
+                        ]
+                      }
+                    },
+                    "notes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "question_template": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "knowledge_target": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "member_cq_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "minItems": 1,
+                      "uniqueItems": true
+                    },
+                    "subject_slots": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^[a-z][a-z0-9_]*$"
+                      },
+                      "uniqueItems": true
+                    },
+                    "operation_hint": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "scope_hints": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "text": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "role": {
+                            "enum": [
+                              "APPLICABILITY",
+                              "BACKGROUND",
+                              "UNCERTAIN"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "text",
+                          "role"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "local_key",
+                    "question_template",
+                    "knowledge_target",
+                    "member_cq_ids"
+                  ]
+                }
+              },
+              "unassigned_cq_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uniqueItems": true
+              },
+              "open_questions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "required": [
+              "families",
+              "unassigned_cq_ids"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "stage": {
+            "const": "SCOPE"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "subject_candidates": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "local_key": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "source_hints": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "doc_id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "revision": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "block_id": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "doc_id",
+                          "revision"
+                        ]
+                      }
+                    },
+                    "notes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "label": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "kind_hint": {
+                      "enum": [
+                        "ENTITY_MENTION",
+                        "COMPONENT",
+                        "TOPIC",
+                        "PROCESS",
+                        "UNKNOWN"
+                      ]
+                    },
+                    "alias_suggestions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  },
+                  "required": [
+                    "local_key",
+                    "label",
+                    "kind_hint"
+                  ]
+                }
+              },
+              "scope_candidates": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "local_key": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "source_hints": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "doc_id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "revision": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "block_id": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "doc_id",
+                          "revision"
+                        ]
+                      }
+                    },
+                    "notes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "family_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "subject_bindings": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "slot": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "subject_candidate_id": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "slot",
+                          "subject_candidate_id"
+                        ]
+                      }
+                    },
+                    "applicability_hint": {
+                      "enum": [
+                        "SUGGESTED",
+                        "UNCERTAIN",
+                        "NOT_SUGGESTED"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "local_key",
+                    "family_id",
+                    "subject_bindings",
+                    "applicability_hint"
+                  ]
+                }
+              },
+              "unresolved_family_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "uniqueItems": true
+              },
+              "open_questions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "required": [
+              "subject_candidates",
+              "scope_candidates",
+              "unresolved_family_ids"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

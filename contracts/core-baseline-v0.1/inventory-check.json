@@ -1,0 +1,11 @@
+{
+  "checked_at": "2026-10-31T06:00:42.378Z",
+  "result": "PASS_DOCUMENT_STRUCTURE_ONLY",
+  "migration_units": 6,
+  "source_fingerprints_checked": 18,
+  "local_document_links_checked": 7,
+  "design_examples": 2,
+  "known_blockers": 2,
+  "model_calls": 0,
+  "scope": "JSON解析、引用/符号/源码指纹与状态一致性；非Rust迁移或产品验收"
+}

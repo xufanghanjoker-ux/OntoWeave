@@ -1,0 +1,143 @@
+{
+  "contract_version": "lightog-demand/0.1",
+  "question_id": "q_compound",
+  "text": "甲云与乙云如何组合，甲云内部又由哪些部分组成？",
+  "text_sha256": "2f320b1d14610d202fea81dadfe80fe64b93bb09d437fd466c0fc5f71ecaefe3",
+  "intent": "KNOWLEDGE_QUERY",
+  "requirements": [
+    {
+      "id": "r_combine",
+      "operation": "RELATION",
+      "subjects": {
+        "selector": "EXPLICIT",
+        "members": [
+          {
+            "local_id": "s_a",
+            "label": "甲云",
+            "question_spans": [
+              {
+                "start": 0,
+                "end": 2,
+                "quote": "甲云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          },
+          {
+            "local_id": "s_b",
+            "label": "乙云",
+            "question_spans": [
+              {
+                "start": 3,
+                "end": 5,
+                "quote": "乙云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          }
+        ]
+      },
+      "target": {
+        "label": "组合",
+        "question_spans": [
+          {
+            "start": 7,
+            "end": 9,
+            "quote": "组合",
+            "offset_unit": "utf16_code_unit"
+          }
+        ],
+        "predicate_ref": null,
+        "origin": "QUESTION",
+        "context_ref": null
+      },
+      "conditions": [],
+      "structure": {
+        "kind": "COMBINATION",
+        "match": "ALL",
+        "roles": [
+          {
+            "role": "PARTICIPANT",
+            "subject_local_ids": [
+              "s_a",
+              "s_b"
+            ]
+          }
+        ],
+        "directionality": "UNDIRECTED"
+      },
+      "coverage_request": {
+        "mode": "UNSPECIFIED",
+        "limit": null
+      },
+      "depends_on": [],
+      "unresolved": []
+    },
+    {
+      "id": "r_parts",
+      "operation": "RELATION",
+      "subjects": {
+        "selector": "EXPLICIT",
+        "members": [
+          {
+            "local_id": "s_a",
+            "label": "甲云",
+            "question_spans": [
+              {
+                "start": 0,
+                "end": 2,
+                "quote": "甲云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          }
+        ]
+      },
+      "target": {
+        "label": "部分",
+        "question_spans": [
+          {
+            "start": 18,
+            "end": 20,
+            "quote": "部分",
+            "offset_unit": "utf16_code_unit"
+          }
+        ],
+        "predicate_ref": null,
+        "origin": "QUESTION",
+        "context_ref": null
+      },
+      "conditions": [],
+      "structure": {
+        "kind": "COMPOSITION",
+        "match": "NOT_APPLICABLE",
+        "roles": [
+          {
+            "role": "WHOLE",
+            "subject_local_ids": [
+              "s_a"
+            ]
+          }
+        ],
+        "directionality": "DIRECTED"
+      },
+      "coverage_request": {
+        "mode": "UNSPECIFIED",
+        "limit": null
+      },
+      "depends_on": [],
+      "unresolved": []
+    }
+  ],
+  "ambiguities": [],
+  "limitations": []
+}

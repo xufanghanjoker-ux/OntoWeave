@@ -1,0 +1,201 @@
+{
+  "contract_version": "lightog-demand/0.1",
+  "question_id": "q_scoped",
+  "text": "比较甲云在中国的部署条件和乙云在欧洲的部署条件。",
+  "text_sha256": "3e486fc90d9dc489379ed7430d376b14040b2e691395d4464cae3222f419a4c7",
+  "intent": "KNOWLEDGE_QUERY",
+  "requirements": [
+    {
+      "id": "r_a_deploy",
+      "operation": "LIST",
+      "subjects": {
+        "selector": "EXPLICIT",
+        "members": [
+          {
+            "local_id": "s_a",
+            "label": "甲云",
+            "question_spans": [
+              {
+                "start": 2,
+                "end": 4,
+                "quote": "甲云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          }
+        ]
+      },
+      "target": {
+        "label": "部署条件",
+        "question_spans": [
+          {
+            "start": 8,
+            "end": 12,
+            "quote": "部署条件",
+            "offset_unit": "utf16_code_unit"
+          }
+        ],
+        "predicate_ref": null,
+        "origin": "QUESTION",
+        "context_ref": null
+      },
+      "conditions": [
+        {
+          "id": "c_s_a_region",
+          "mention": {
+            "start": 5,
+            "end": 7,
+            "quote": "中国",
+            "offset_unit": "utf16_code_unit"
+          },
+          "field": "SCOPE",
+          "operator": "EQ",
+          "value": {
+            "kind": "STRING",
+            "value": "中国"
+          },
+          "interpretation": "FORMALIZED"
+        }
+      ],
+      "structure": null,
+      "coverage_request": {
+        "mode": "UNSPECIFIED",
+        "limit": null
+      },
+      "depends_on": [],
+      "unresolved": []
+    },
+    {
+      "id": "r_b_deploy",
+      "operation": "LIST",
+      "subjects": {
+        "selector": "EXPLICIT",
+        "members": [
+          {
+            "local_id": "s_b",
+            "label": "乙云",
+            "question_spans": [
+              {
+                "start": 13,
+                "end": 15,
+                "quote": "乙云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          }
+        ]
+      },
+      "target": {
+        "label": "部署条件",
+        "question_spans": [
+          {
+            "start": 8,
+            "end": 12,
+            "quote": "部署条件",
+            "offset_unit": "utf16_code_unit"
+          }
+        ],
+        "predicate_ref": null,
+        "origin": "QUESTION",
+        "context_ref": null
+      },
+      "conditions": [
+        {
+          "id": "c_s_b_region",
+          "mention": {
+            "start": 16,
+            "end": 18,
+            "quote": "欧洲",
+            "offset_unit": "utf16_code_unit"
+          },
+          "field": "SCOPE",
+          "operator": "EQ",
+          "value": {
+            "kind": "STRING",
+            "value": "欧洲"
+          },
+          "interpretation": "FORMALIZED"
+        }
+      ],
+      "structure": null,
+      "coverage_request": {
+        "mode": "UNSPECIFIED",
+        "limit": null
+      },
+      "depends_on": [],
+      "unresolved": []
+    },
+    {
+      "id": "r_compare_deploy",
+      "operation": "COMPARE",
+      "subjects": {
+        "selector": "EXPLICIT",
+        "members": [
+          {
+            "local_id": "s_a",
+            "label": "甲云",
+            "question_spans": [
+              {
+                "start": 2,
+                "end": 4,
+                "quote": "甲云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          },
+          {
+            "local_id": "s_b",
+            "label": "乙云",
+            "question_spans": [
+              {
+                "start": 13,
+                "end": 15,
+                "quote": "乙云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          }
+        ]
+      },
+      "target": {
+        "label": "部署条件",
+        "question_spans": [
+          {
+            "start": 8,
+            "end": 12,
+            "quote": "部署条件",
+            "offset_unit": "utf16_code_unit"
+          }
+        ],
+        "predicate_ref": null,
+        "origin": "QUESTION",
+        "context_ref": null
+      },
+      "conditions": [],
+      "structure": null,
+      "coverage_request": {
+        "mode": "UNSPECIFIED",
+        "limit": null
+      },
+      "depends_on": [
+        "r_a_deploy",
+        "r_b_deploy"
+      ],
+      "unresolved": []
+    }
+  ],
+  "ambiguities": [],
+  "limitations": []
+}

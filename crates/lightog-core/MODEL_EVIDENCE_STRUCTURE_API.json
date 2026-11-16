@@ -1,0 +1,250 @@
+{
+  "boundary": "All arguments are one JSON payload p. execute(op,p) returns Result<Value>; errors preserve message and optional per-claim details. No model/provider/storage calls.",
+  "model": {
+    "normalize_schema_envelope": {
+      "args": [
+        "raw"
+      ],
+      "returns": "{schema,normalization}"
+    },
+    "validate_schema": {
+      "args": [
+        "schema",
+        "input",
+        "normalization?"
+      ],
+      "returns": "{schema,normalization}; schema contains the same mutations as the frozen JS validator"
+    },
+    "query_plan_issues": {
+      "args": [
+        "schema",
+        "input"
+      ],
+      "returns": "issue[]"
+    },
+    "answer_plan": {
+      "args": [
+        "result",
+        "input",
+        "plan"
+      ],
+      "returns": "legacy UNKNOWN/CONFLICT/ATTRIBUTED_ONLY answer object"
+    },
+    "answer_cq": {
+      "args": [
+        "result",
+        "input",
+        "cq_id"
+      ],
+      "returns": "same as answer_plan for matching schema CQ plan"
+    },
+    "validate_input": {
+      "args": [
+        "body"
+      ],
+      "returns": "normalized input (original content unchanged, consent enforced)"
+    },
+    "validate_build_input": {
+      "args": [
+        "input"
+      ],
+      "returns": "same input; SYSTEM_BUILD_PREFLIGHT on invalid source/content hash"
+    },
+    "extraction_context": {
+      "args": [
+        "source",
+        "unit"
+      ],
+      "returns": "original_layout_context_v1 object with preceding headings and table headers"
+    }
+  },
+  "evidence": {
+    "align_quote": {
+      "args": [
+        "source",
+        "quote"
+      ],
+      "returns": "{start,end,quote,method,model_quote?}"
+    },
+    "validate_claims": {
+      "args": [
+        "raw:{claims}",
+        "schema",
+        "input",
+        "options?:{collectErrors,unit,maxClaims,repeatedRepairReferences}"
+      ],
+      "returns": "{claims,normalization,issues?,submitted?}"
+    },
+    "reuse_verified_claim_spans": {
+      "args": [
+        "claims",
+        "previous",
+        "source",
+        "unit"
+      ],
+      "returns": "claims[]; only an identical unique verified statement can acquire start/end"
+    }
+  },
+  "structure": {
+    "is_structural_predicate": {
+      "args": [
+        "schema",
+        "predicate"
+      ],
+      "returns": "boolean"
+    },
+    "support_valid": {
+      "args": [
+        "claim",
+        "sources"
+      ],
+      "returns": "boolean"
+    },
+    "normalize_support_set": {
+      "args": [
+        "rows? or support_set?",
+        "input"
+      ],
+      "returns": "support[]; missing rows maps JS undefined to wire null"
+    },
+    "validate_structure_intent": {
+      "args": [
+        "raw",
+        "cqs",
+        "groups?"
+      ],
+      "returns": "normalized requirements[]"
+    },
+    "assert_structure_plans": {
+      "args": [
+        "schema",
+        "requirements"
+      ],
+      "returns": "null on success (JS void)"
+    },
+    "validate_structure_selection": {
+      "args": [
+        "raw",
+        "candidates",
+        "requirements"
+      ],
+      "returns": "normalized items[]"
+    },
+    "structure_reference_menu": {
+      "args": [
+        "candidates",
+        "claims?"
+      ],
+      "returns": "{candidates,claims}; closure restoration exposed as separate restore_structure_references op"
+    },
+    "restore_structure_references": {
+      "args": [
+        "raw",
+        "candidates",
+        "claims?"
+      ],
+      "returns": "raw object with restored items"
+    },
+    "structure_fragments": {
+      "args": [
+        "source",
+        "unit",
+        "context?"
+      ],
+      "returns": "fragments[]"
+    },
+    "materialize_claim_evidence": {
+      "args": [
+        "claims",
+        "sources",
+        "unit",
+        "fragments",
+        "provided"
+      ],
+      "returns": "claims[] with exact restored evidence spans"
+    },
+    "validate_structure_discovery": {
+      "args": [
+        "raw",
+        "unit",
+        "source",
+        "options?:{fragments,collectErrors}"
+      ],
+      "returns": "candidate[] or {candidates,issues,excluded} when collectErrors"
+    },
+    "validate_structure_repair": {
+      "args": [
+        "raw",
+        "issues",
+        "unit",
+        "source",
+        "options?"
+      ],
+      "returns": "{candidates,excluded}"
+    },
+    "attach_existing_query_roles": {
+      "args": [
+        "item",
+        "candidate",
+        "schema",
+        "claims"
+      ],
+      "returns": "item (including role_binding_resolution when existing complete patterns found)"
+    },
+    "validate_structure_audit": {
+      "args": [
+        "raw",
+        "candidates",
+        "claims",
+        "options?:{requirements,schema}",
+        "schema?"
+      ],
+      "returns": "normalized audit items[]"
+    },
+    "learning_observation_id": {
+      "args": [
+        "base",
+        "question",
+        "epoch"
+      ],
+      "returns": "obs_... string"
+    }
+  },
+  "compatibility_notes": [
+    "Claim/source IDs use legacy JS stringify order, not canonical hashes.",
+    "Schema/claim normalization metadata is returned, never silently omitted.",
+    "No validateInput/runPipeline/provider orchestration migration in these three modules; those adapters remain owned by root.",
+    "No learning validateExtension implementation here; owned by learning module.",
+    "Struct menu opaque IDs are scoped to the supplied local menu, not global aliases.",
+    "Rust CORE_ASSERTION is the transport carrier for Node ERR_ASSERTION; CORE_TYPE_ERROR maps to native TypeError without code.",
+    "Only Node deepStrictEqual generated multi-line diff rendering is not duplicated: normalize_schema_envelope keeps the same stable Chinese error prefix; raw comparison is retained."
+  ],
+  "capability": {
+    "create_catalog": {
+      "args": [
+        "job",
+        "parentCatalog? or options.parentCatalog?"
+      ],
+      "returns": "capabilities_v1 catalog including legacy IDs/signatures/task hash"
+    },
+    "bind": {
+      "args": [
+        "job",
+        "catalog",
+        "capabilityId or capability_id",
+        "params?",
+        "question? or options.question?"
+      ],
+      "returns": "{capability_id,params,plan,input,issues}"
+    }
+  },
+  "legacy_mutation_contract": {
+    "validate_schema": "Mutate supplied schema (including delete/normalize nested fields), append normalization array, return same schema identity in Node wrapper.",
+    "validate_structure_selection": "Mutate raw.items in place to returned normalized items.",
+    "validate_structure_audit": "Mutate raw.items and items in place to returned normalized items.",
+    "attach_existing_query_roles": "Mutate item in place to returned item.",
+    "validate_structure_intent": "No raw mutation; returns mapped requirements, ATTRIBUTE gets a new normalized object.",
+    "normalize_schema_envelope": "Clone schema from raw, do not mutate raw.",
+    "other_pure_operations": "No mutation of caller arguments unless explicitly listed."
+  }
+}

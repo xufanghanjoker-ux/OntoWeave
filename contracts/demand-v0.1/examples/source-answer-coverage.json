@@ -1,0 +1,59 @@
+{
+  "contract_version": "lightog-demand/0.1",
+  "coverage_report_id": "coverage_new",
+  "question_id": "q_new",
+  "question_spec_sha256": "e884c60b9dcd2155891b65cdddfb9ad550baa409daa41b5bea57086772e29c27",
+  "snapshot": {
+    "base_ref": "kb_synthetic",
+    "source_epoch": 1,
+    "graph_revision": null,
+    "sources": [
+      {
+        "source_ref": "src_compare",
+        "source_revision": "src_compare_v1",
+        "original_sha256": "b78d630d377e667d119a98f0ee0c1477cadfca2c4c5e757f1dc87ca947a1bc72",
+        "text_sha256": "b78d630d377e667d119a98f0ee0c1477cadfca2c4c5e757f1dc87ca947a1bc72",
+        "parser_version": "synthetic-text/1"
+      },
+      {
+        "source_ref": "src_new",
+        "source_revision": "src_new_v1",
+        "original_sha256": "17865ad0263da4866d59af0bc57522ec5280863d31416ade601a1010dda0d383",
+        "text_sha256": "17865ad0263da4866d59af0bc57522ec5280863d31416ade601a1010dda0d383",
+        "parser_version": "synthetic-text/1"
+      }
+    ]
+  },
+  "requirements": [
+    {
+      "requirement_id": "r_location",
+      "status": "SATISFIED",
+      "basis": "DOCUMENT",
+      "evidence_ids": [
+        "e_new"
+      ],
+      "condition_receipts": [],
+      "checked_block_refs": [
+        "src_new_b1"
+      ],
+      "unsearched_block_refs": [
+        "src_compare_b1"
+      ],
+      "scope_status": "LOCAL",
+      "semantic_coverage": "NOT_ASSESSED",
+      "coverage_receipt_ref": null,
+      "reason": "原创合成样例：当前片段直接支持丁云的交付地区。",
+      "scope_binding_ref": null,
+      "subject_receipts": [
+        {
+          "subject_local_id": "s_d",
+          "status": "SATISFIED",
+          "evidence_ids": [
+            "e_new"
+          ]
+        }
+      ]
+    }
+  ],
+  "evidence_set_ref": "es_synthetic"
+}

@@ -1,0 +1,23 @@
+[package]
+name = "lightog-core"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+lightog-demand = { path = "../lightog-demand" }
+lightog-retrieval = { path = "../lightog-retrieval" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+sha2 = "0.10"
+regex = "1"
+unicode-normalization = "0.1"
+ryu-js = "1"
+icu_collator = "2"
+icu_locale = "2"
+chrono = { version = "0.4", default-features = false, features = ["std"] }
+
+
+[dev-dependencies]
+jsonschema = { version = "0.60.2", default-features = false }

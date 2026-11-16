@@ -1,0 +1,92 @@
+{
+  "contract_version": "lightog-demand/0.1",
+  "question_id": "q_within",
+  "text": "甲云、乙云、丙云之间分别有哪些组合？",
+  "text_sha256": "2b2f690f4bb5db0835baa51f88a9281fdae731fcd3ba9f3dbfc4833edcc3cac1",
+  "intent": "KNOWLEDGE_QUERY",
+  "requirements": [
+    {
+      "id": "r_modes",
+      "operation": "RELATION",
+      "subjects": {
+        "selector": "EXPLICIT",
+        "members": [
+          {
+            "local_id": "s_a",
+            "label": "甲云",
+            "question_spans": [
+              {
+                "start": 0,
+                "end": 2,
+                "quote": "甲云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          },
+          {
+            "local_id": "s_b",
+            "label": "乙云",
+            "question_spans": [
+              {
+                "start": 3,
+                "end": 5,
+                "quote": "乙云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          },
+          {
+            "local_id": "s_c",
+            "label": "丙云",
+            "question_spans": [
+              {
+                "start": 6,
+                "end": 8,
+                "quote": "丙云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          }
+        ]
+      },
+      "target": {
+        "label": "组合",
+        "question_spans": [
+          {
+            "start": 15,
+            "end": 17,
+            "quote": "组合",
+            "offset_unit": "utf16_code_unit"
+          }
+        ],
+        "predicate_ref": null,
+        "origin": "QUESTION",
+        "context_ref": null
+      },
+      "conditions": [],
+      "structure": {
+        "kind": "COMBINATION",
+        "match": "WITHIN",
+        "roles": [],
+        "directionality": "UNDIRECTED"
+      },
+      "coverage_request": {
+        "mode": "UNSPECIFIED",
+        "limit": null
+      },
+      "depends_on": [],
+      "unresolved": []
+    }
+  ],
+  "ambiguities": [],
+  "limitations": []
+}

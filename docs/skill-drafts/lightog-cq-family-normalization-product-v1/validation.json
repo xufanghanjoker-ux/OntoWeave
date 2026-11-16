@@ -1,0 +1,39 @@
+{
+  "status": "FROZEN_DRAFT_OFFLINE_ONLY",
+  "skill_name": "lightog-cq-family-normalization-product-v1",
+  "skill_sha256": "5e0debd71c15d61265202c4bd8a04fccabb97d97b7613bc69bf7d36b09d92a51",
+  "diagnosis_sha256": "333184b590958789cc630a5b3c4254a437db84abc790c893313ffb1276a013ce",
+  "checks": {
+    "skill_creator_quick_validate": "PASS",
+    "embedded_json_examples": "PASS",
+    "synthetic_multi_member_and_singleton_contract": "PASS",
+    "necessary_notes_with_quotes_preserved": "PASS",
+    "quote_backslash_newline_json_roundtrip": "PASS",
+    "structural_negative_control": "PASS: overbroad grouping also passes structure; semantic approval NOT implied",
+    "original_invalid_json_reproduced_without_repair": true,
+    "stream_equals_final": true,
+    "independent_static_review": "NO_SUBSTANTIVE_ISSUES",
+    "protected_artifact_hashes_unchanged": 6
+  },
+  "observed_original_failure": {
+    "position": 885,
+    "argument_chars": 2098
+  },
+  "performance_observation": {
+    "source": "Main-session ledger report; not a new measurement",
+    "cq_requests": 5,
+    "cq_elapsed_ms": 104031,
+    "family_requests": 1,
+    "family_elapsed_ms": 164786,
+    "family_input_tokens": 10380,
+    "family_output_tokens": 9632,
+    "family_argument_chars": 2098
+  },
+  "external_generation_requests": 0,
+  "embedding_requests": 0,
+  "behavioral_generation_trials": 0,
+  "semantic_gain": "NOT_VERIFIED",
+  "latency_or_usage_gain": "NOT_MEASURED",
+  "existing_adapter_changed": false,
+  "old_failed_run_repaired_or_resumed": false
+}

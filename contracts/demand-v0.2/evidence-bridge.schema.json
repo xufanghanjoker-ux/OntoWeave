@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lightog:evidence-bridge:0.1",
+  "title": "LightOG evidence bridge request envelope",
+  "description": "Shared objects retain lightog-demand/0.1 semantics. Their fields are validated by the existing Rust Kernel in addition to this envelope. context and legacy_claims are host-provided trusted inputs, not model authority.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/ComposePayload"
+    },
+    {
+      "$ref": "#/$defs/AnswerBundle"
+    }
+  ],
+  "$defs": {
+    "ComposeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bridge_version",
+        "evidence_set_id",
+        "snapshot",
+        "source_fragments",
+        "legacy_claim_ids"
+      ],
+      "properties": {
+        "bridge_version": {
+          "const": "lightog-evidence-bridge/0.1"
+        },
+        "evidence_set_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "snapshot": {
+          "type": "object",
+          "description": "Existing SourceSnapshot, validated with lifecycle authority."
+        },
+        "source_fragments": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "type": "object",
+            "description": "Existing EvidenceFragment with SOURCE_FRAGMENT origin and empty claim_refs."
+          }
+        },
+        "legacy_claim_ids": {
+          "type": "array",
+          "maxItems": 1024,
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "ComposePayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request",
+        "context",
+        "legacy_claims"
+      ],
+      "properties": {
+        "request": {
+          "$ref": "#/$defs/ComposeRequest"
+        },
+        "context": {
+          "type": "object"
+        },
+        "legacy_claims": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "AnswerBundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context",
+        "question_spec",
+        "evidence_set",
+        "coverage_report",
+        "answer_result"
+      ],
+      "properties": {
+        "context": {
+          "type": "object"
+        },
+        "question_spec": {
+          "type": "object"
+        },
+        "evidence_set": {
+          "type": "object"
+        },
+        "coverage_report": {
+          "type": "object"
+        },
+        "answer_result": {
+          "type": "object"
+        },
+        "learning_intent": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

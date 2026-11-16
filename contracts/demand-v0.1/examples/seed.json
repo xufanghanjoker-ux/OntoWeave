@@ -1,0 +1,57 @@
+{
+  "contract_version": "lightog-demand/0.1",
+  "question_id": "q_seed",
+  "text": "Agent本体是什么？",
+  "text_sha256": "25b3a38d8843484c259577fd771541c1534cce1e04011cdc1d98f568dcafa500",
+  "intent": "KNOWLEDGE_QUERY",
+  "requirements": [
+    {
+      "id": "r_definition",
+      "operation": "EXPLAIN",
+      "subjects": {
+        "selector": "EXPLICIT",
+        "members": [
+          {
+            "local_id": "s_agent",
+            "label": "Agent本体",
+            "question_spans": [
+              {
+                "start": 0,
+                "end": 7,
+                "quote": "Agent本体",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          }
+        ]
+      },
+      "target": {
+        "label": "是什么",
+        "question_spans": [
+          {
+            "start": 7,
+            "end": 10,
+            "quote": "是什么",
+            "offset_unit": "utf16_code_unit"
+          }
+        ],
+        "predicate_ref": null,
+        "origin": "QUESTION",
+        "context_ref": null
+      },
+      "conditions": [],
+      "structure": null,
+      "coverage_request": {
+        "mode": "UNSPECIFIED",
+        "limit": null
+      },
+      "depends_on": [],
+      "unresolved": []
+    }
+  ],
+  "ambiguities": [],
+  "limitations": []
+}

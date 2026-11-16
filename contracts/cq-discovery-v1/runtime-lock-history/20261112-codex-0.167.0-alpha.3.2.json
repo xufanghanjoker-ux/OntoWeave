@@ -1,0 +1,37 @@
+{
+  "version": "lightog-codex-protocol-lock/1",
+  "cli_version": "0.167.0-alpha.3.2",
+  "generator": "codex app-server generate-json-schema --out <directory>",
+  "generated_locally": true,
+  "app_server_started": false,
+  "model_requests": 0,
+  "official_reference": "https://learn.chatgpt.com/docs/app-server",
+  "schemas": {
+    "v1/InitializeParams.json": "c608ff6bdd94e661423dca9b44cd1dcea7eac610f74e1310284c61eab64280bc",
+    "v1/InitializeResponse.json": "62ad689c2cb6379913c1d72749cfd8de5089d35760214123518eb92eef11acc9",
+    "v2/ThreadStartParams.json": "e9c6d3cc18d049bfbc0249add3808fb8e5a27e1a0b5a423767aafbc3859a9428",
+    "v2/ThreadStartResponse.json": "dfacf835b6b46a9f087b3e89a81f44f1ed0620518a7a957a3d06681bd86b6944",
+    "v2/TurnStartParams.json": "4e25cd48986f73e600d9949a055ddb994a75b4a38790e935274646f0fece00ad",
+    "v2/TurnStartResponse.json": "b75b88c2f507685b948d06166b5436678fd320c9878883d97f5a17f620a25116",
+    "v2/TurnInterruptParams.json": "6dff382dae73d1dbc58406ed045605f647e7a49660e2540fbd2c6c24d60c5f2b",
+    "v2/TurnInterruptResponse.json": "531de6be06fe979b5963f249bab82498a175e614bf65ac12fb2e849dfe60bcf1",
+    "v2/TurnCompletedNotification.json": "00b691508bb0187ecc5f080bb1608add7137672698daed6922967ad90bcb16e1",
+    "v2/ThreadTokenUsageUpdatedNotification.json": "aba4f6c7e4a19b2b842c08ee793b57000c07dafd57b922ad0d8e7c76609108c2"
+  },
+  "compatibility": {
+    "qwen3.8-flash": "UNKNOWN",
+    "mcp_skill_tool_loop": "LOCAL_OFFLINE_VERIFIED",
+    "per_request_hard_gate": "LOCAL_OFFLINE_VERIFIED"
+  },
+  "executable_sha256": "a636331ed87605efc4cf84028ac2884a75363f9d10ead63cffb57ea0016d486e",
+  "previous_lock": "runtime-lock-history/20261107-codex-0.166.0-alpha.6.json",
+  "schema_directory": "codex-0.167.0-alpha.3.2",
+  "local_protocol_review": {
+    "date": "2026-11-07",
+    "report": "runtime-schema-review-20261107.json",
+    "schema_change_summary": "5/10 schemas changed: optional approval capability and audio input union only; text/skill paths unchanged.",
+    "runtime_probe": "LOCAL_OFFLINE_PASS_16_OF_16",
+    "provider_compatibility": "NOT_REVALIDATED",
+    "runtime_probe_report": "local-runs/native-v5-call-context-20261107/summary.json"
+  }
+}

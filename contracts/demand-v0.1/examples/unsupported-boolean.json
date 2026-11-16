@@ -1,0 +1,84 @@
+{
+  "contract_version": "lightog-demand/0.1",
+  "question_id": "q_boolean",
+  "text": "甲云在欧洲且面向零售客户，或在亚洲且面向制造业客户时有哪些渠道？",
+  "text_sha256": "b69a77a2c1f5c7dc5a3f100354bd1dc12004c09d69e4884f0b64bf2264a72b6b",
+  "intent": "KNOWLEDGE_QUERY",
+  "requirements": [
+    {
+      "id": "r_channels",
+      "operation": "LIST",
+      "subjects": {
+        "selector": "EXPLICIT",
+        "members": [
+          {
+            "local_id": "s_a",
+            "label": "甲云",
+            "question_spans": [
+              {
+                "start": 0,
+                "end": 2,
+                "quote": "甲云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          }
+        ]
+      },
+      "target": {
+        "label": "渠道",
+        "question_spans": [
+          {
+            "start": 29,
+            "end": 31,
+            "quote": "渠道",
+            "offset_unit": "utf16_code_unit"
+          }
+        ],
+        "predicate_ref": null,
+        "origin": "QUESTION",
+        "context_ref": null
+      },
+      "conditions": [
+        {
+          "id": "c_boolean",
+          "mention": {
+            "start": 2,
+            "end": 26,
+            "quote": "在欧洲且面向零售客户，或在亚洲且面向制造业客户时",
+            "offset_unit": "utf16_code_unit"
+          },
+          "field": "SCOPE",
+          "operator": "UNRESOLVED",
+          "value": null,
+          "interpretation": "UNRESOLVED"
+        }
+      ],
+      "structure": null,
+      "coverage_request": {
+        "mode": "UNSPECIFIED",
+        "limit": null
+      },
+      "depends_on": [],
+      "unresolved": [
+        "l_boolean"
+      ]
+    }
+  ],
+  "ambiguities": [],
+  "limitations": [
+    {
+      "id": "l_boolean",
+      "mention": {
+        "start": 2,
+        "end": 26,
+        "quote": "在欧洲且面向零售客户，或在亚洲且面向制造业客户时",
+        "offset_unit": "utf16_code_unit"
+      },
+      "reason": "BOOLEAN_EXPRESSION_UNSUPPORTED"
+    }
+  ]
+}

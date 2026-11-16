@@ -1,0 +1,8 @@
+{
+  ".agents/skills/lightog-cq-family-normalization/SKILL.md": "85e2137dcc284a64babf44104c4de36572b26d4213f5dfb5a17c6d3dbd029987",
+  "web/native-family-input-adapter-v1.mjs": "fa68d043af52163f9703591189558e484a5985ecbe0424d771167287c0ff6f56",
+  "web/native-family-input-adapter-v1.test.mjs": "d91aa09fefd455ece2cb02cbf5aafa7ea7101d9b8ce75717aa2868c2a1173e6c",
+  "local-runs/native-four-docs-20261106/diagnostics/family-unsaved-0.arguments.txt": "8fb4f3d9de6b1916bfbc15f88b7d066c1edaa50876e7ceab10ce0e4888345a8c",
+  "local-runs/native-four-docs-20261106/diagnostics/family-json-failure.json": "b68a014a150608cff2e256b7282fceb55ea894d1e3876d49b80cba199716498a",
+  "local-runs/native-four-docs-20261106/review/nrun_689e02e13f9f4310b0777e092658cc4e/cq-original.json": "d135750de094347c9ecb548251244d3856ff276731b69b91ff471ab79c49063b"
+}

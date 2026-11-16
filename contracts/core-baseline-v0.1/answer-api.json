@@ -1,0 +1,55 @@
+{
+  "module": "answer",
+  "status": "ISOLATED_EQUIVALENT_PENDING_INTEGRATION",
+  "operations": {
+    "build_evidence": {
+      "payload_shape": {
+        "job": {},
+        "claims": []
+      }
+    },
+    "validate": {
+      "payload_shape": {
+        "raw": {},
+        "index": {},
+        "gate": {}
+      }
+    },
+    "validate_review": {
+      "payload_shape": {
+        "review": {},
+        "draft": {}
+      }
+    },
+    "source_draft": {
+      "payload_shape": {
+        "index": {},
+        "gate": {}
+      }
+    },
+    "finish": {
+      "payload_shape": {
+        "job": {},
+        "gate": {},
+        "index": {},
+        "draft": {},
+        "mode": "SYNTHESIS",
+        "reason": null,
+        "review": null,
+        "meta": {
+          "answer_id": "HOST_UUID",
+          "answered_at": "HOST_ISO_TIMESTAMP"
+        }
+      }
+    },
+    "parse_json": {
+      "payload_shape": {
+        "content": "{\"a\":1}",
+        "decoded": {
+          "a": 1
+        }
+      }
+    }
+  },
+  "decoder_boundary": "Node parseModelJson preserves native input-decoding diagnostics; Rust rejects duplicate keys and owns all answer evidence/domain contracts."
+}

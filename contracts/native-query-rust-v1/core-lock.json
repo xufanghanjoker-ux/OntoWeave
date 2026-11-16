@@ -1,0 +1,9 @@
+{
+  "contract_version": "lightog-native-query-core/1",
+  "binary_path": "target/native-query-rust-v1/current-read-closure-5790684fb53d83a8/lightog-core",
+  "binary_sha256": "5790684fb53d83a8e0a6f88c9bee2bb13e829d50c7a93aa71d0b2fc880f08c3d",
+  "algorithm_revision": "NATIVE_QUERY_BM25_RRF_V2",
+  "ranking_revision": "native-query-bm25-rrf/2",
+  "source_freeze_sha256": "2a32dcc2cf5bb0179691fae7d4cb433c41a0361975905fa745332cbef72b6b8b",
+  "status": "INDEPENDENT_OFFLINE_VERIFIED_PENDING_REAL_PRODUCT_ACCEPTANCE"
+}

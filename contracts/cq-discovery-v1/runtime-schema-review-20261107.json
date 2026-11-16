@@ -1,0 +1,66 @@
+{
+  "old_cli_version": "0.166.0-alpha.6",
+  "new_cli_version": "0.167.0-alpha.3.2",
+  "new_executable_sha256": "a636331ed87605efc4cf84028ac2884a75363f9d10ead63cffb57ea0016d486e",
+  "historical_lock": "contracts/cq-discovery-v1/runtime-lock-history/20261107-codex-0.166.0-alpha.6.json",
+  "schema_generation_only": true,
+  "external_requests": 0,
+  "changes": {
+    "v1/InitializeParams.json": {
+      "semantic_change": true,
+      "change": "optional InitializeCapabilities.requiredHumanApproval:boolean added",
+      "current_usage_impact": "Not sent by LightOG; existing initialize request remains valid."
+    },
+    "v1/InitializeResponse.json": {
+      "semantic_change": false
+    },
+    "v2/ThreadStartParams.json": {
+      "semantic_change": false
+    },
+    "v2/ThreadStartResponse.json": {
+      "semantic_change": true,
+      "change": "audio input supports url or fileId; text/skill and all other variants unchanged",
+      "current_usage_impact": "LightOG native tasks send text/skill only; no adaptation required."
+    },
+    "v2/TurnStartParams.json": {
+      "semantic_change": true,
+      "change": "audio input supports url or fileId; text/skill and all other variants unchanged",
+      "current_usage_impact": "LightOG native tasks send text/skill only; no adaptation required."
+    },
+    "v2/TurnStartResponse.json": {
+      "semantic_change": true,
+      "change": "audio input supports url or fileId; text/skill and all other variants unchanged",
+      "current_usage_impact": "LightOG native tasks send text/skill only; no adaptation required."
+    },
+    "v2/TurnInterruptParams.json": {
+      "semantic_change": false
+    },
+    "v2/TurnInterruptResponse.json": {
+      "semantic_change": false
+    },
+    "v2/TurnCompletedNotification.json": {
+      "semantic_change": true,
+      "change": "audio input supports url or fileId; text/skill and all other variants unchanged",
+      "current_usage_impact": "LightOG native tasks send text/skill only; no adaptation required."
+    },
+    "v2/ThreadTokenUsageUpdatedNotification.json": {
+      "semantic_change": false
+    }
+  },
+  "changed_schemas": 5,
+  "unchanged_schemas": 5,
+  "historical_probe_plan_path_adjustment": {
+    "file": "contracts/cq-discovery-v1/probe-plan.json",
+    "before": "contracts/cq-discovery-v1/runtime-lock.json",
+    "after": "contracts/cq-discovery-v1/runtime-lock-history/20261107-codex-0.166.0-alpha.6.json",
+    "version_and_budget_changed": false
+  },
+  "offline_native_probe": {
+    "tests": 16,
+    "pass": 16,
+    "fail": 0,
+    "skipped": 0,
+    "external_requests": 0,
+    "tap": "local-runs/native-v5-call-context-20261107/native-0167.tap"
+  }
+}

@@ -1,0 +1,621 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lightog-knowledge:0.2",
+  "$comment": "External demand 0.1 definitions are resolved from the checked-in schema, never fetched over network. New objects retain their own contract_version; nested SourceSnapshot/SourceMention/TypedValue reuse 0.1.",
+  "$defs": {
+    "CandidateEntity": {
+      "type": "object",
+      "properties": {
+        "local_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 12000
+        },
+        "entity_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "type_label": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 12000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "mentions": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:lightog-demand:0.1#/$defs/SubjectTerm/properties/source_mentions/items"
+          },
+          "minItems": 1,
+          "maxItems": 10000
+        }
+      },
+      "required": [
+        "local_id",
+        "label",
+        "entity_ref",
+        "type_label",
+        "mentions"
+      ],
+      "additionalProperties": false
+    },
+    "PredicateProposal": {
+      "type": "object",
+      "properties": {
+        "predicate_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "proposed_definition": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 12000
+                },
+                "description": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 12000
+                },
+                "evidence_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                  },
+                  "minItems": 1,
+                  "maxItems": 10000,
+                  "uniqueItems": true
+                }
+              },
+              "required": [
+                "label",
+                "description",
+                "evidence_ids"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "predicate_ref",
+        "proposed_definition"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateCondition": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 12000
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "minItems": 1,
+          "maxItems": 10000,
+          "uniqueItems": true
+        },
+        "support_status": {
+          "const": "UNVERIFIED"
+        }
+      },
+      "required": [
+        "id",
+        "text",
+        "evidence_ids",
+        "support_status"
+      ],
+      "additionalProperties": false
+    },
+    "CandidateQualifiers": {
+      "type": "object",
+      "properties": {
+        "scope": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 12000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "modality": {
+          "enum": [
+            "CURRENT",
+            "PLANNED",
+            "REPORTED",
+            "UNKNOWN"
+          ]
+        },
+        "negated": {
+          "type": "boolean"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 12000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "effective_time": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 12000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "scope",
+        "modality",
+        "negated",
+        "unit",
+        "effective_time"
+      ],
+      "additionalProperties": false
+    },
+    "ExtractionCandidate": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "lightog-knowledge/0.2"
+        },
+        "candidate_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "kind": {
+          "enum": [
+            "ENTITY",
+            "RELATION",
+            "ATTRIBUTE"
+          ]
+        },
+        "snapshot": {
+          "$ref": "urn:lightog-demand:0.1#/$defs/SourceSnapshot"
+        },
+        "evidence_set_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "minItems": 1,
+          "maxItems": 10000,
+          "uniqueItems": true
+        },
+        "entities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CandidateEntity"
+          },
+          "minItems": 1,
+          "maxItems": 10000
+        },
+        "subject_local_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "predicate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PredicateProposal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "object": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "entity_local_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "typed_value": {
+                  "anyOf": [
+                    {
+                      "$ref": "urn:lightog-demand:0.1#/$defs/TypedValue"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "entity_local_id",
+                "typed_value"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "direction": {
+          "enum": [
+            "DIRECTED",
+            "UNDIRECTED",
+            "NONE"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 12000
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 12000
+          },
+          "minItems": 0,
+          "maxItems": 10000
+        },
+        "qualifiers": {
+          "$ref": "#/$defs/CandidateQualifiers"
+        },
+        "conditions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CandidateCondition"
+          },
+          "minItems": 0,
+          "maxItems": 10000
+        },
+        "status": {
+          "const": "CANDIDATE"
+        },
+        "semantic_status": {
+          "const": "UNVERIFIED"
+        }
+      },
+      "required": [
+        "contract_version",
+        "candidate_id",
+        "kind",
+        "snapshot",
+        "evidence_set_ref",
+        "evidence_ids",
+        "entities",
+        "subject_local_id",
+        "predicate",
+        "object",
+        "direction",
+        "description",
+        "keywords",
+        "qualifiers",
+        "conditions",
+        "status",
+        "semantic_status"
+      ],
+      "additionalProperties": false
+    },
+    "RetrievalProfile": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "lightog-knowledge/0.2"
+        },
+        "profile_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "profile_revision": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "profile_kind": {
+          "enum": [
+            "ENTITY",
+            "RELATION",
+            "PATTERN"
+          ]
+        },
+        "snapshot": {
+          "$ref": "urn:lightog-demand:0.1#/$defs/SourceSnapshot"
+        },
+        "subject_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_set_ref": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "evidence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "minItems": 1,
+          "maxItems": 10000,
+          "uniqueItems": true
+        },
+        "claim_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+          },
+          "minItems": 0,
+          "maxItems": 10000,
+          "uniqueItems": true
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 12000
+        },
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 12000
+          },
+          "minItems": 0,
+          "maxItems": 10000
+        },
+        "text_policy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 12000
+        },
+        "status": {
+          "const": "DERIVED_INDEX"
+        },
+        "semantic_status": {
+          "const": "NOT_FACT"
+        }
+      },
+      "required": [
+        "contract_version",
+        "profile_id",
+        "profile_revision",
+        "profile_kind",
+        "snapshot",
+        "subject_ref",
+        "evidence_set_ref",
+        "evidence_ids",
+        "claim_refs",
+        "text",
+        "keywords",
+        "text_policy",
+        "status",
+        "semantic_status"
+      ],
+      "additionalProperties": false
+    },
+    "VectorSpace": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 12000
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 12000
+        },
+        "model_revision": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 12000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dimensions": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        },
+        "normalization": {
+          "enum": [
+            "NONE",
+            "L2"
+          ]
+        },
+        "distance": {
+          "enum": [
+            "COSINE",
+            "DOT",
+            "EUCLIDEAN"
+          ]
+        },
+        "text_policy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 12000
+        },
+        "tokenizer_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 12000
+        }
+      },
+      "required": [
+        "provider",
+        "model",
+        "model_revision",
+        "dimensions",
+        "normalization",
+        "distance",
+        "text_policy",
+        "tokenizer_version"
+      ],
+      "additionalProperties": false
+    },
+    "IndexManifest": {
+      "type": "object",
+      "properties": {
+        "contract_version": {
+          "const": "lightog-knowledge/0.2"
+        },
+        "index_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "index_revision": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+        },
+        "component": {
+          "enum": [
+            "ENTITY",
+            "RELATION",
+            "PATTERN",
+            "CHUNK"
+          ]
+        },
+        "snapshot": {
+          "$ref": "urn:lightog-demand:0.1#/$defs/SourceSnapshot"
+        },
+        "vector_space": {
+          "$ref": "#/$defs/VectorSpace"
+        },
+        "status": {
+          "enum": [
+            "BUILDING",
+            "READY",
+            "ACTIVE",
+            "SUPERSEDED"
+          ]
+        },
+        "records_total": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "vectors_completed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "build_receipt_ref": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.:-]{0,127}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "contract_version",
+        "index_id",
+        "index_revision",
+        "component",
+        "snapshot",
+        "vector_space",
+        "status",
+        "records_total",
+        "vectors_completed",
+        "build_receipt_ref"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/ExtractionCandidate"
+    },
+    {
+      "$ref": "#/$defs/RetrievalProfile"
+    },
+    {
+      "$ref": "#/$defs/IndexManifest"
+    }
+  ]
+}

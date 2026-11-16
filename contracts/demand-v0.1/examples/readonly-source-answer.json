@@ -1,0 +1,47 @@
+{
+  "contract_version": "lightog-demand/0.1",
+  "question_id": "q_new",
+  "question_spec_sha256": "e884c60b9dcd2155891b65cdddfb9ad550baa409daa41b5bea57086772e29c27",
+  "snapshot": {
+    "base_ref": "kb_synthetic",
+    "source_epoch": 1,
+    "graph_revision": null,
+    "sources": [
+      {
+        "source_ref": "src_compare",
+        "source_revision": "src_compare_v1",
+        "original_sha256": "b78d630d377e667d119a98f0ee0c1477cadfca2c4c5e757f1dc87ca947a1bc72",
+        "text_sha256": "b78d630d377e667d119a98f0ee0c1477cadfca2c4c5e757f1dc87ca947a1bc72",
+        "parser_version": "synthetic-text/1"
+      },
+      {
+        "source_ref": "src_new",
+        "source_revision": "src_new_v1",
+        "original_sha256": "17865ad0263da4866d59af0bc57522ec5280863d31416ade601a1010dda0d383",
+        "text_sha256": "17865ad0263da4866d59af0bc57522ec5280863d31416ade601a1010dda0d383",
+        "parser_version": "synthetic-text/1"
+      }
+    ]
+  },
+  "evidence_set_ref": "es_synthetic",
+  "answer_status": "ANSWERED",
+  "basis": "DOCUMENT",
+  "statements": [
+    {
+      "id": "statement_location",
+      "text": "资料说明丁云在欧洲提供服务。",
+      "evidence_ids": [
+        "e_new"
+      ],
+      "requirement_ids": [
+        "r_location"
+      ]
+    }
+  ],
+  "coverage_report_ref": "coverage_new",
+  "learning_state": {
+    "status": "NOT_REQUESTED",
+    "task_ref": null
+  },
+  "request_ref": "req_synthetic"
+}

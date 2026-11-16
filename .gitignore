@@ -1,0 +1,24 @@
+.DS_Store
+target/
+node_modules/
+dist/
+.venv/
+.venv-docling*/
+__pycache__/
+.pytest_cache/
+.env
+.env.*
+!.env.example
+local-data/
+local-runs/
+*.log
+
+# 默认运行资料与结果放入上述本地目录，不要把私有上传文件放入 fixtures。
+
+# Private local runtime, generated credentials and knowledge stores
+.ontoweave/
+*.sqlite
+*.sqlite-*
+*.db
+*.key
+*.pem

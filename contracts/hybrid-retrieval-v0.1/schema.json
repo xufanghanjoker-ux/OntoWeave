@@ -1,0 +1,433 @@
+{
+  "type": "object",
+  "properties": {
+    "contract_version": {
+      "const": "lightog-hybrid-retrieval/0.1"
+    },
+    "question": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 16000
+    },
+    "queries": {
+      "type": "object",
+      "properties": {
+        "document": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16000
+        },
+        "entity": {
+          "type": "string",
+          "maxLength": 16000
+        },
+        "relation": {
+          "type": "string",
+          "maxLength": 16000
+        }
+      },
+      "required": [
+        "document",
+        "entity",
+        "relation"
+      ],
+      "additionalProperties": false
+    },
+    "snapshot": {
+      "type": "object"
+    },
+    "trusted_index": {
+      "type": "object",
+      "properties": {
+        "records": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "kind": {
+                "enum": [
+                  "DOCUMENT",
+                  "ENTITY",
+                  "RELATION",
+                  "PATTERN"
+                ]
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128000
+              },
+              "entity_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "maxItems": 128
+              },
+              "evidence_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "maxItems": 128,
+                "minItems": 1
+              },
+              "status": {
+                "enum": [
+                  "SOURCE",
+                  "DISCOVERY_HINT",
+                  "PUBLISHED"
+                ]
+              },
+              "profile": {
+                "anyOf": [
+                  {
+                    "type": "object"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "embedding": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "index_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 256
+                      },
+                      "values": {
+                        "type": "array",
+                        "items": {
+                          "type": "number"
+                        },
+                        "minItems": 1,
+                        "maxItems": 65536
+                      },
+                      "text_sha256": {
+                        "type": "string",
+                        "pattern": "^[0-9a-f]{64}$"
+                      }
+                    },
+                    "required": [
+                      "index_id",
+                      "values",
+                      "text_sha256"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "text",
+              "entity_refs",
+              "evidence_ids",
+              "status",
+              "profile",
+              "embedding"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "edges": {
+          "type": "array",
+          "maxItems": 50000,
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "source_record_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "target_record_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "evidence_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 256
+                },
+                "maxItems": 128,
+                "minItems": 1
+              },
+              "status": {
+                "enum": [
+                  "DISCOVERY_HINT",
+                  "PUBLISHED"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "source_record_id",
+              "target_record_id",
+              "evidence_ids",
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "manifests": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "type": "object"
+          }
+        },
+        "context": {
+          "type": "object"
+        },
+        "evidence_token_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "tokens": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 128000
+              },
+              "quote_sha256": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "tokenizer": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              }
+            },
+            "required": [
+              "tokens",
+              "quote_sha256",
+              "tokenizer"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "tokenizer": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "records",
+        "edges",
+        "manifests",
+        "context",
+        "evidence_token_counts",
+        "tokenizer"
+      ],
+      "additionalProperties": false
+    },
+    "query_vectors": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "properties": {
+          "component": {
+            "enum": [
+              "CHUNK",
+              "ENTITY",
+              "RELATION",
+              "PATTERN"
+            ]
+          },
+          "index_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "vector_space": {
+            "type": "object"
+          },
+          "query_text_sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "values": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 1,
+            "maxItems": 65536
+          }
+        },
+        "required": [
+          "component",
+          "index_id",
+          "vector_space",
+          "query_text_sha256",
+          "values"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "rerank": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "status": {
+              "enum": [
+                "COMPLETE",
+                "FAILED"
+              ]
+            },
+            "model": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "candidate_set_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "scores": {
+              "type": "array",
+              "maxItems": 100,
+              "items": {
+                "type": "object",
+                "properties": {
+                  "record_id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 256
+                  },
+                  "score": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "record_id",
+                  "score"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "status",
+            "model",
+            "candidate_set_sha256",
+            "scores"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "channel_top_k": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "result_top_k": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "rrf_k": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "max_graph_neighbors": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "max_context_utf16": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128000
+        },
+        "max_context_tokens": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 128000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "min_cosine": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "channel_top_k",
+        "result_top_k",
+        "rrf_k",
+        "max_graph_neighbors",
+        "max_context_utf16",
+        "max_context_tokens",
+        "min_cosine"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "contract_version",
+    "question",
+    "queries",
+    "snapshot",
+    "trusted_index",
+    "query_vectors",
+    "rerank",
+    "options"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lightog:hybrid-retrieval:0.1",
+  "description": "Strict search payload. Snapshot/manifests/profiles/evidence are context-validated by P1 Rust kernels; schema shape alone is insufficient. Vectors are host-supplied finite floats, not demand integer wire objects."
+}

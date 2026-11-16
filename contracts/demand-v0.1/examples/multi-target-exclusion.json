@@ -1,0 +1,120 @@
+{
+  "contract_version": "lightog-demand/0.1",
+  "question_id": "q_multi",
+  "text": "除欧洲以外，甲云的交付地区和语言数量分别是什么？",
+  "text_sha256": "36bd98184cbcc4311bc2390f041823c4ba2074e9ff9e31f7461a9bd04e805279",
+  "intent": "KNOWLEDGE_QUERY",
+  "requirements": [
+    {
+      "id": "r_region",
+      "operation": "LIST",
+      "subjects": {
+        "selector": "EXPLICIT",
+        "members": [
+          {
+            "local_id": "s_a",
+            "label": "甲云",
+            "question_spans": [
+              {
+                "start": 6,
+                "end": 8,
+                "quote": "甲云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          }
+        ]
+      },
+      "target": {
+        "label": "交付地区",
+        "question_spans": [
+          {
+            "start": 9,
+            "end": 13,
+            "quote": "交付地区",
+            "offset_unit": "utf16_code_unit"
+          }
+        ],
+        "predicate_ref": null,
+        "origin": "QUESTION",
+        "context_ref": null
+      },
+      "conditions": [
+        {
+          "id": "c_exclude",
+          "mention": {
+            "start": 0,
+            "end": 5,
+            "quote": "除欧洲以外",
+            "offset_unit": "utf16_code_unit"
+          },
+          "field": "TARGET_VALUE",
+          "operator": "NE",
+          "value": {
+            "kind": "STRING",
+            "value": "欧洲"
+          },
+          "interpretation": "FORMALIZED"
+        }
+      ],
+      "structure": null,
+      "coverage_request": {
+        "mode": "UNSPECIFIED",
+        "limit": null
+      },
+      "depends_on": [],
+      "unresolved": []
+    },
+    {
+      "id": "r_languages",
+      "operation": "LIST",
+      "subjects": {
+        "selector": "EXPLICIT",
+        "members": [
+          {
+            "local_id": "s_a",
+            "label": "甲云",
+            "question_spans": [
+              {
+                "start": 6,
+                "end": 8,
+                "quote": "甲云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          }
+        ]
+      },
+      "target": {
+        "label": "语言数量",
+        "question_spans": [
+          {
+            "start": 14,
+            "end": 18,
+            "quote": "语言数量",
+            "offset_unit": "utf16_code_unit"
+          }
+        ],
+        "predicate_ref": null,
+        "origin": "QUESTION",
+        "context_ref": null
+      },
+      "conditions": [],
+      "structure": null,
+      "coverage_request": {
+        "mode": "UNSPECIFIED",
+        "limit": null
+      },
+      "depends_on": [],
+      "unresolved": []
+    }
+  ],
+  "ambiguities": [],
+  "limitations": []
+}

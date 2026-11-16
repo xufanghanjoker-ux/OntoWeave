@@ -1,0 +1,259 @@
+{
+  "status": "IMPLEMENTED_ISOLATED_PENDING_DIFFERENTIAL",
+  "storage_effects": "Host applies ordered writes after trusted state checks; kernel performs no IO or clock calls.",
+  "operations": {
+    "source.extraction_units": {
+      "payload": {
+        "sources": [],
+        "options": {
+          "maxChars": 6000,
+          "overlap": 400
+        }
+      },
+      "result": "ExtractionUnit[]"
+    },
+    "source.context_sources": {
+      "payload": {
+        "sources": [],
+        "cqs": [],
+        "options": {
+          "maxChars": 16000
+        }
+      },
+      "result": "SourceContext[]"
+    },
+    "source.claim_review_batches": {
+      "payload": {
+        "claims": [],
+        "options": {
+          "maxClaims": 40,
+          "maxChars": 24000
+        }
+      },
+      "result": "ReviewBatch[]"
+    },
+    "index.ensure": {
+      "payload": {
+        "base_id": "kb_a",
+        "sources": [],
+        "entities": [],
+        "rows": [],
+        "created_at": "HOST_SUPPLIED_ISO_TIMESTAMP"
+      },
+      "result": {
+        "units": [],
+        "rows": [],
+        "writes": []
+      }
+    },
+    "index.enrich": {
+      "payload": {
+        "base_id": "kb_a",
+        "sources": [],
+        "entities": [],
+        "rows": [],
+        "created_at": "HOST_SUPPLIED_ISO_TIMESTAMP",
+        "scope_row": {
+          "unit_id": "u",
+          "entity_mentions": [],
+          "subjects": []
+        }
+      },
+      "result": {
+        "units": [],
+        "rows": [],
+        "writes": []
+      }
+    },
+    "index.rank": {
+      "payload": {
+        "base_id": "kb_a",
+        "sources": [],
+        "entities": [],
+        "rows": [],
+        "created_at": "HOST_SUPPLIED_ISO_TIMESTAMP",
+        "question": "问题",
+        "claims": []
+      },
+      "result": {
+        "units": [],
+        "rows": [],
+        "writes": [],
+        "ranked": []
+      }
+    },
+    "index.plan": {
+      "payload": {
+        "base_id": "kb_a",
+        "sources": [],
+        "entities": [],
+        "rows": [],
+        "created_at": "HOST_SUPPLIED_ISO_TIMESTAMP",
+        "question": "问题",
+        "claims": [],
+        "evidence": []
+      },
+      "result": {
+        "units": [],
+        "rows": [],
+        "writes": [],
+        "ranked": [],
+        "plan": {}
+      }
+    },
+    "index.expand": {
+      "payload": {
+        "base_id": "kb_a",
+        "sources": [],
+        "entities": [],
+        "rows": [],
+        "created_at": "HOST_SUPPLIED_ISO_TIMESTAMP",
+        "question": "问题",
+        "claims": [],
+        "previous": {}
+      },
+      "result": {
+        "units": [],
+        "rows": [],
+        "writes": [],
+        "ranked": [],
+        "plan": {}
+      }
+    },
+    "index.validate_plan": {
+      "payload": {
+        "plan": {},
+        "sources": [],
+        "evidence": []
+      },
+      "result": "ExtractionUnit[]"
+    },
+    "validate_extension": {
+      "payload": {
+        "schema": {},
+        "previous": {},
+        "options": {
+          "resolvableIds": []
+        }
+      },
+      "result": "schema"
+    },
+    "simple_attribute_extension": {
+      "payload": {
+        "schema": {},
+        "extension": {},
+        "requirements": []
+      },
+      "result": "boolean"
+    },
+    "extension_extraction_schema": {
+      "payload": {
+        "schema": {},
+        "previous": {},
+        "options": {
+          "targetPredicateIds": []
+        }
+      },
+      "result": {
+        "schema": {},
+        "new_subject_ids": []
+      }
+    },
+    "select_units": {
+      "payload": {
+        "units": [],
+        "question": "问题"
+      },
+      "result": "ExtractionUnit[]"
+    },
+    "evidence_units": {
+      "payload": {
+        "units": [],
+        "evidence": [],
+        "sources": []
+      },
+      "result": "ExtractionUnit[]"
+    },
+    "additive_review_selection": {
+      "payload": {
+        "claims": [],
+        "retained": []
+      },
+      "result": {
+        "claims": [],
+        "indices": []
+      }
+    },
+    "dimension": {
+      "payload": {
+        "schema": {},
+        "extractionSchema": {},
+        "cqs": [],
+        "definitions": "",
+        "as_of": null,
+        "contract": "HOST_CONTRACT_HASH"
+      },
+      "result": "sha256 hex string"
+    },
+    "ledger.lookup": {
+      "payload": {
+        "base_id": "kb_a",
+        "dimension": "hash",
+        "unit": {},
+        "retained": [],
+        "row": null
+      },
+      "result": "receipt|null"
+    },
+    "ledger.commit": {
+      "payload": {
+        "base_id": "kb_a",
+        "job": {},
+        "published": false
+      },
+      "result": {
+        "writes": []
+      }
+    },
+    "resolve_holds": {
+      "payload": {
+        "job": {},
+        "tasks": [],
+        "holds": [],
+        "library_candidates": [],
+        "library_states": [],
+        "review_contract_rechecks": []
+      },
+      "result": {
+        "resolved": [],
+        "writes": []
+      }
+    },
+    "index.keys": {
+      "payload": {
+        "base_id": "kb_a",
+        "sources": []
+      },
+      "result": "legacy index id[]"
+    },
+    "ledger.key": {
+      "payload": {
+        "base_id": "kb_a",
+        "dimension": "hash",
+        "unit": {}
+      },
+      "result": "legacy receipt id"
+    }
+  },
+  "write_shape": {
+    "kind": "legacy record kind",
+    "id": "legacy stable id",
+    "value": "record payload"
+  },
+  "notes": [
+    "Examples show payload field names, not necessarily valid complete domain instances.",
+    "retrieval module dispatches source.* and index.*; learning module dispatches remaining operations.",
+    "rows, tasks and records preserve host iteration order.",
+    "Missing optional fields must remain absent when the legacy serializer omits them; do not substitute null indiscriminately."
+  ]
+}

@@ -1,0 +1,482 @@
+{
+  "version": "lightog-cq-loop-tools/1",
+  "mcp_server_version": "2.1.0",
+  "tools": [
+    {
+      "name": "lightog_list_documents",
+      "description": "列出本任务快照文档。仅目录，不代表阅读正文。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "snapshot_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "cursor": {
+            "type": "string",
+            "minLength": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        },
+        "required": [
+          "snapshot_id"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "lightog_read_document_units",
+      "description": "按授权文档修订和分页读取正文，保留实际读取收据。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "snapshot_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "doc_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "revision": {
+            "type": "string",
+            "minLength": 1
+          },
+          "block_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "cursor": {
+            "type": "string",
+            "minLength": 1
+          },
+          "max_chars": {
+            "type": "integer",
+            "minimum": 256,
+            "maximum": 12000
+          }
+        },
+        "required": [
+          "snapshot_id",
+          "doc_id",
+          "revision"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "lightog_search_documents",
+      "description": "本地字面检索；只读命中不代表读完全文。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "snapshot_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "query": {
+            "type": "string",
+            "minLength": 1
+          },
+          "cursor": {
+            "type": "string",
+            "minLength": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        },
+        "required": [
+          "snapshot_id",
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "lightog_submit_cq_stage",
+      "description": "保存本单元完整CQ检查点，提交后仍须复查与明确结束决策。业务ID由Host生成，无需答案或精确证据。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "work_unit_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "stage": {
+            "const": "CQ"
+          },
+          "input_snapshot_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "upstream_artifact_refs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "artifact_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "version": {
+                  "const": 1
+                }
+              },
+              "required": [
+                "artifact_id",
+                "version"
+              ]
+            }
+          },
+          "input_read_refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "expected_draft_revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "payload": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "local_key": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "source_hints": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "doc_id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "revision": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "block_id": {
+                            "type": "string",
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "doc_id",
+                          "revision"
+                        ]
+                      }
+                    },
+                    "notes": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "question": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "knowledge_target": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "origin": {
+                      "enum": [
+                        "DOCUMENT",
+                        "USER",
+                        "MODEL_IDEA"
+                      ]
+                    },
+                    "operation_hint": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "local_key",
+                    "question",
+                    "knowledge_target",
+                    "origin"
+                  ]
+                }
+              },
+              "open_questions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "required": [
+              "items"
+            ]
+          },
+          "revision_links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "from_cq_ids": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "to_local_keys": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "relation": {
+                  "enum": [
+                    "SPLIT",
+                    "REVISED",
+                    "RETIRED",
+                    "UNCHANGED"
+                  ]
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "from_cq_ids",
+                "to_local_keys",
+                "relation",
+                "reason"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "work_unit_id",
+          "stage",
+          "input_snapshot_id",
+          "upstream_artifact_refs",
+          "expected_draft_revision",
+          "idempotency_key",
+          "payload",
+          "input_read_refs"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "lightog_get_cq_progress",
+      "description": "读取当前草案、计划、实际读取范围、待处理动作和剩余额度。不会宣称知识已核实。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "cursor": {
+            "type": "string",
+            "minLength": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    },
+    {
+      "name": "lightog_record_cq_decision",
+      "description": "保存具体缺口及READ/SEARCH/REVISE_CQ/REQUEST_WORK_UNIT/FINISH_UNIT/STOP_PARTIAL决策。跨单元由Host在已知轮次完成后调度；原绑定不能越权。",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "expected_plan_revision": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "expected_draft_revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "next_action": {
+            "enum": [
+              "READ",
+              "SEARCH",
+              "REVISE_CQ",
+              "REQUEST_WORK_UNIT",
+              "FINISH_UNIT",
+              "STOP_PARTIAL"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "gap": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "minLength": 1
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "expected_information": {
+                "type": "string",
+                "minLength": 1
+              },
+              "receipt_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "cq_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "required": [
+              "kind",
+              "description",
+              "expected_information"
+            ],
+            "additionalProperties": false
+          },
+          "target": {
+            "type": "object",
+            "properties": {
+              "doc_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "revision": {
+                "type": "string",
+                "minLength": 1
+              },
+              "block_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "cursor": {
+                "type": "string",
+                "minLength": 1
+              },
+              "query": {
+                "type": "string",
+                "minLength": 1
+              },
+              "create_new": {
+                "type": "boolean"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "unresolved": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "stop_reason": {
+            "enum": [
+              "SOURCE_LIMITATION",
+              "KNOWN_FAILURE",
+              "BUDGET_OR_TIME_LIMIT"
+            ]
+          }
+        },
+        "required": [
+          "expected_plan_revision",
+          "expected_draft_revision",
+          "idempotency_key",
+          "next_action",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      }
+    }
+  ]
+}

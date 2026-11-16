@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:lightog:source-context:0.2",
+  "title": "Trusted binary artifact and parsed source context",
+  "description": "Host verifies original binary hash; Rust verifies parsed text, registered block ranges and source snapshots. The full context retains examples/source_texts/authority; this schema defines the additive source row.",
+  "type": "object",
+  "properties": {
+    "source_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source_revision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "original_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "parser_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "blocks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "properties": {
+          "block_ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "start": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "end": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "block_ref",
+          "start",
+          "end"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "source_ref",
+    "source_revision",
+    "text",
+    "original_sha256",
+    "parser_version",
+    "blocks"
+  ],
+  "additionalProperties": false
+}

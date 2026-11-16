@@ -1,0 +1,78 @@
+{
+  "version": "lightog-cq-runtime-probe-plan/1",
+  "status": "PREPARED_NOT_AUTHORIZED_NOT_EXECUTABLE_YET",
+  "model": "qwen3.8-flash",
+  "codex_version": "0.166.0-alpha.6",
+  "transport": "stdio-jsonl",
+  "input_file": "fixtures/cq-discovery-v1/probe-inputs.json",
+  "protocol_lock": "contracts/cq-discovery-v1/runtime-lock-history/20261107-codex-0.166.0-alpha.6.json",
+  "destination": {
+    "base_url": "https://cn-beijing.maas.qianwenaiapi.com/compatible-mode/v1",
+    "proposed_inference_url": "https://cn-beijing.maas.qianwenaiapi.com/compatible-mode/v1/responses",
+    "source": "scripts/run-partial-scope-p3-flash-v1.mjs:180",
+    "status": "BASE_REUSED_FROM_PRIOR_CHAT_COMPLETIONS; RESPONSES_COMPATIBILITY_UNKNOWN",
+    "redirects": "FORBIDDEN",
+    "other_destinations": "FORBIDDEN"
+  },
+  "proposed_new_budget": {
+    "external_generation_requests": 6,
+    "maximum_serialized_request_bytes": 32000,
+    "maximum_aggregate_request_bytes": 192000,
+    "maximum_response_bytes_per_request": 2097152,
+    "maximum_concurrency": 1,
+    "maximum_wall_ms": 120000,
+    "automatic_retries": 0,
+    "subagents": 0,
+    "embedding": 0,
+    "rerank": 0,
+    "token_usage": "RECORD_ACTUAL; NO_PRE_SEND_TOKEN_HARD_CAP_CLAIM"
+  },
+  "stages": [
+    {
+      "name": "LOCAL_PREFLIGHT",
+      "external_requests": 0,
+      "checks": [
+        "verify exact executable and generated schemas",
+        "isolated runtime configuration",
+        "only CQ MCP tools; no terminal/arbitrary filesystem/network tools",
+        "enforce request gate below every inference send including retries"
+      ]
+    },
+    {
+      "name": "CQ_TOOL_LOOP",
+      "request_budget": 4,
+      "checks": [
+        "bind qwen3.8-flash",
+        "read directory and body via MCP",
+        "continue after tool results",
+        "submit stage A without answer or exact offsets",
+        "save actual model and usage receipts"
+      ]
+    },
+    {
+      "name": "CANCEL_AND_UNKNOWN",
+      "request_budget": 2,
+      "checks": [
+        "persist cancel before interrupt",
+        "archive late return",
+        "hold reservation after sent-result disconnect",
+        "reconnect queries state without resending"
+      ]
+    }
+  ],
+  "blockers_before_any_turn_start": [
+    "New user authorization must bind this plan, input and protocol hashes; old 63/63 budget is exhausted.",
+    "CQ-2 must implement and offline-verify the actual outbound request gate for every Codex inference send; turn counting is insufficient.",
+    "CQ-2 must verify fixed-version restrictions and wire an isolated MCP transport/Skill. Present domain tools are only a local adapter.",
+    "No silent model or destination fallback. An incompatible endpoint is a failed probe, not permission to switch."
+  ],
+  "historical_budget": {
+    "generation_used": 63,
+    "generation_limit": 63,
+    "embedding_used": 22,
+    "embedding_limit": 40,
+    "rerank_used": 0
+  },
+  "credentials": "NOT_READ_NOT_STORED; future credentials supplied in memory only",
+  "acceptance": "Protocol schema generation and offline drafts do not establish runtime or model compatibility."
+}

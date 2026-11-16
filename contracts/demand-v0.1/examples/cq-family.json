@@ -1,0 +1,45 @@
+{
+  "contract_version": "lightog-demand/0.1",
+  "family_id": "family_definition",
+  "seed_question_id": "q_seed",
+  "seed_requirement_ids": [
+    "r_definition"
+  ],
+  "subject_slot": {
+    "slot_id": "slot_system",
+    "replace_subject_local_id": "s_agent",
+    "role": "DESCRIBED_SUBJECT"
+  },
+  "expansion_policy": "SAME_ASPECT_ONLY",
+  "cohort_basis": {
+    "kind": "DOCUMENT_COMPARISON_GROUP",
+    "evidence_ids": [
+      "e_cohort"
+    ],
+    "user_definition_ref": null
+  },
+  "condition_transfer": [],
+  "members": [
+    {
+      "local_id": "s_kg",
+      "label": "知识图谱本体",
+      "question_spans": [],
+      "entity_ref": null,
+      "source_evidence_ids": [
+        "e_cohort"
+      ],
+      "source_mentions": [
+        {
+          "evidence_ref": "e_cohort",
+          "span": {
+            "start": 13,
+            "end": 19,
+            "quote": "知识图谱本体",
+            "offset_unit": "utf16_code_unit"
+          }
+        }
+      ]
+    }
+  ],
+  "seed_question_spec_sha256": "a651b6113970d4671f11119b1dd5c248982a076e8676a6bed99d722c55513691"
+}

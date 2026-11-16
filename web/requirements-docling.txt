@@ -1,0 +1,8 @@
+# Verified locally with Python 3.12 on macOS arm64. Model weights have separate licenses.
+docling[rapidocr]==2.138.0
+
+# Independent ruled-table geometry validation for native-text PDFs.
+pdfplumber==0.11.9
+
+# Token-aware shared source chunks for the native CQ workflow.
+-r requirements-hybrid-chunking.lock

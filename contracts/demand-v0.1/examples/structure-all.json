@@ -1,0 +1,92 @@
+{
+  "contract_version": "lightog-demand/0.1",
+  "question_id": "q_all",
+  "text": "甲云、乙云、丙云能否在同一个模式共同组合？",
+  "text_sha256": "98df6d4977449bd1b4d30596d28228e904ad96b8a4c0f9ea20ae45248b54206c",
+  "intent": "KNOWLEDGE_QUERY",
+  "requirements": [
+    {
+      "id": "r_modes",
+      "operation": "RELATION",
+      "subjects": {
+        "selector": "EXPLICIT",
+        "members": [
+          {
+            "local_id": "s_a",
+            "label": "甲云",
+            "question_spans": [
+              {
+                "start": 0,
+                "end": 2,
+                "quote": "甲云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          },
+          {
+            "local_id": "s_b",
+            "label": "乙云",
+            "question_spans": [
+              {
+                "start": 3,
+                "end": 5,
+                "quote": "乙云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          },
+          {
+            "local_id": "s_c",
+            "label": "丙云",
+            "question_spans": [
+              {
+                "start": 6,
+                "end": 8,
+                "quote": "丙云",
+                "offset_unit": "utf16_code_unit"
+              }
+            ],
+            "entity_ref": null,
+            "source_evidence_ids": [],
+            "source_mentions": []
+          }
+        ]
+      },
+      "target": {
+        "label": "组合",
+        "question_spans": [
+          {
+            "start": 18,
+            "end": 20,
+            "quote": "组合",
+            "offset_unit": "utf16_code_unit"
+          }
+        ],
+        "predicate_ref": null,
+        "origin": "QUESTION",
+        "context_ref": null
+      },
+      "conditions": [],
+      "structure": {
+        "kind": "COMBINATION",
+        "match": "ALL",
+        "roles": [],
+        "directionality": "UNDIRECTED"
+      },
+      "coverage_request": {
+        "mode": "UNSPECIFIED",
+        "limit": null
+      },
+      "depends_on": [],
+      "unresolved": []
+    }
+  ],
+  "ambiguities": [],
+  "limitations": []
+}
