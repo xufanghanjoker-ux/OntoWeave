@@ -7,6 +7,7 @@ const TERMINAL=new Set(['COMPLETED','NEEDS_CLARIFICATION','INTERRUPTED','FAILED'
 const SERVER=new Set(['RUNNING','ANSWER_STAGED','STALE',...TERMINAL]);
 const TYPES=new Set(['turn.created','tool.started','tool.completed','citation.registered','answer.delta','answer.replace','turn.completed','turn.stopped','turn.failed']);
 const PIN=['library_id','build_run_id','library_revision_ref','source_snapshot_ref','source_index_revision','fact_index_revision'];
+const PG_PIN=['view_revision','business_manifest_sha256','retrieval_index_revision','at','as_of'];
 const LOCAL=new Set(['STARTING','START_UNCONFIRMED','START_REJECTED']);
 const object=v=>v!==null&&typeof v==='object'&&!Array.isArray(v);
 const text=v=>typeof v==='string'&&v.trim().length>0;
@@ -14,6 +15,18 @@ const ref=v=>typeof v==='string'&&REF.test(v);
 const clone=structuredClone;
 const sorted=v=>Array.isArray(v)?v.map(sorted):object(v)?Object.fromEntries(Object.keys(v).sort().map(k=>[k,sorted(v[k])])):v;
 const equal=(a,b)=>JSON.stringify(sorted(a))===JSON.stringify(sorted(b));
+function validScope(scope, libraryId){
+ if(!object(scope)||scope.library_id!==libraryId)return false;
+ const view=scope.query_read_view;
+ if(view===undefined)return PIN.every(key=>text(scope[key]));
+ return object(view)&&view.library_ref===libraryId&&view.contract==='ontoweave-query-read-view/1'
+  &&text(view.view_revision)&&text(view.business_manifest_sha256)&&text(view.retrieval_index_revision)
+  &&[view.at,view.as_of].every(value=>value===null||text(value));
+}
+function alignedPin(pin, scope){
+ if(pin.query_read_view)return PG_PIN.every(key=>pin.query_read_view[key]===scope.query_read_view?.[key]);
+ return !scope.query_read_view&&PIN.every(key=>pin[key]===scope[key]);
+}
 async function citationMatches(known,response){
  if(known?.delivery_contract!=='lightog-citation-descriptor/1')return equal(known,response.citation);
  if(!equal(known,response.citation_descriptor)||typeof known.detail_sha256!=='string'||!globalThis.crypto?.subtle)return false;
@@ -163,9 +176,9 @@ export function createLightogChatClient({api,requestStream=globalThis.fetch,uuid
   Object.assign(p,{status:turn.status,source_scope:clone(turn.source_scope),historical:turn.historical,historical_status:turn.historical_status,locked:!terminal(turn),cancel_pending:terminal(turn)?false:p.cancel_pending});
   turn.cancel_pending=p.cancel_pending;if(terminal(turn)){turn.local_status=null;p.local_status=null;}else if(p.cancel_pending){turn.local_status=p.local_status??'CANCEL_UNCONFIRMED';}
  }
- function observe(e,t){if(e.observed_pin&&t.source_scope)t.historical=t.historical||PIN.some(k=>e.observed_pin[k]!==t.source_scope[k]);}
+ function observe(e,t){if(e.observed_pin&&t.source_scope)t.historical=t.historical||!alignedPin(e.observed_pin,t.source_scope);}
  function turnFromResponse(e,response,expectedRef){
-  if(!object(response)||response.library_id!==e.libraryId||!ref(response.query_ref)||expectedRef&&response.query_ref!==expectedRef||!SERVER.has(response.status)||!text(response.question)||!object(response.source_scope)||response.source_scope.library_id!==e.libraryId||PIN.some(k=>!text(response.source_scope[k])))throw fail('LIGHTOG_CHAT_READBACK_UNCONFIRMED','对话记录尚未匹配原资料库、提问与来源版本。');
+  if(!object(response)||response.library_id!==e.libraryId||!ref(response.query_ref)||expectedRef&&response.query_ref!==expectedRef||!SERVER.has(response.status)||!text(response.question)||!validScope(response.source_scope,e.libraryId))throw fail('LIGHTOG_CHAT_READBACK_UNCONFIRMED','对话记录尚未匹配原资料库、提问与来源版本。');
   const prior=e.turns.get(response.query_ref);
   if(prior?.question&&prior.question!==response.question||prior?.conversation_id&&response.conversation_id!==prior.conversation_id||prior?.turn_id&&response.turn_id!==prior.turn_id||prior?.source_scope&&response.source_scope&&!equal(prior.source_scope,response.source_scope))throw fail('LIGHTOG_CHAT_READBACK_UNCONFIRMED','对话身份或来源版本发生不一致，保留原结果。');
   if(response.conversation_id!==undefined&&response.conversation_id!==null&&!ref(response.conversation_id)||response.turn_id!==undefined&&response.turn_id!==null&&!ref(response.turn_id))throw fail('LIGHTOG_CHAT_READBACK_UNCONFIRMED','对话标识尚未完整读回。');
@@ -239,8 +252,8 @@ export function createLightogChatClient({api,requestStream=globalThis.fetch,uuid
  const client={
   snapshot,current:snapshot,
   noteVersion({libraryId,pin}={}){
-   const e=entry(libraryId);if(!object(pin)||pin.library_id!==libraryId||PIN.some(k=>!text(pin[k])))return result('REJECTED',e,{error:info(null,'资料库版本尚未完整读回。')});
-   e.observed_pin=Object.fromEntries(PIN.map(k=>[k,pin[k]]));for(const turn of e.turns.values())observe(e,turn);const t=e.turns.get(e.receipt?.query_ref);if(t)syncReceipt(e,t);changed(e);return result('UPDATED',e);
+   const e=entry(libraryId);if(!validScope(pin,libraryId))return result('REJECTED',e,{error:info(null,'资料库版本尚未完整读回。')});
+   e.observed_pin=pin.query_read_view?{library_id:libraryId,query_read_view:clone(pin.query_read_view)}:Object.fromEntries(PIN.map(k=>[k,pin[k]]));for(const turn of e.turns.values())observe(e,turn);const t=e.turns.get(e.receipt?.query_ref);if(t)syncReceipt(e,t);changed(e);return result('UPDATED',e);
   },
   newChat({libraryId}={}){
    const e=entry(libraryId);stopStream(e);e.selectionEpoch++;e.conversation_id=null;e.query_ref=null;e.visible=[];changed(e);return result('UPDATED',e);
@@ -282,7 +295,9 @@ export function createLightogChatClient({api,requestStream=globalThis.fetch,uuid
     e.receipt={library_id:libraryId,request_id:requestId,question,conversation_id:conversationId??null,turn_id:null,turn_index:null,query_ref:null,status:'STARTING',locked:true,cancel_pending:false};e.error=null;persist(e,true);notify(e);
    }catch(error){e.error=info(error,'问题尚未发送，请检查本机收据与输入。');notify(e);return result('REJECTED',e,{error:e.error});}
    try{
-    const body={question,request_id:requestId,...(conversationId?{conversation_id:conversationId}:{})},response=await api(base(libraryId)+'/ask',body);
+    const pg=e.observed_pin?.query_read_view;
+    const selection=pg?{...(pg.at?{at:pg.at}:{}),...(pg.as_of?{as_of:{timestamp:pg.as_of}}:{view_revision:pg.view_revision})}:{};
+    const body={question,request_id:requestId,...(conversationId?{conversation_id:conversationId}:{}),...selection},response=await api(base(libraryId)+'/ask',body);
     if(e.receipt?.request_id!==requestId)return result('IGNORED',e);
     if(!ref(response?.query_ref)||!ref(response?.conversation_id)||!ref(response?.turn_id)||!Number.isSafeInteger(response?.turn_index)||response.turn_index<1||!SERVER.has(response?.status)||response.library_id!==undefined&&response.library_id!==libraryId||conversationId&&response.conversation_id!==conversationId)throw fail('LIGHTOG_CHAT_START_UNCONFIRMED','启动回执尚未匹配原请求，未重复提交。');
     Object.assign(e.receipt,{query_ref:response.query_ref,conversation_id:response.conversation_id,turn_id:response.turn_id,turn_index:response.turn_index,status:response.status});

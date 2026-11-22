@@ -1,3 +1,4 @@
+import {readNativeCQMaterials} from './native-chunked-cq-v1.mjs';
 import {readNativeSimplifiedPartialGraph} from './native-simplified-partial-graph-v1.mjs';
 import {createNativeSimplifiedConflictProduct} from './native-simplified-conflict-product-v1.mjs';
 import {readNativeBuildProgress} from './native-build-progress-v1.mjs';
@@ -68,7 +69,7 @@ function prepareConfirmedUpstream({store,catalog,libraryId,snapshotId,upstreamRu
   if(row?.stop_after==='FAMILY'&&state?.upstream_origin?.mode==='EXPLICITLY_IMPORTED_CONFIRMED_CQ_ONLY'){
     return prepareNativeProductConfirmedPrefix({store,catalog,libraryId,snapshotId,upstreamRunId});
   }
-  if(state?.input?.cq_chunk_policy?.version==='DOCLING_HYBRID_CQ_V1'){
+  if(['DOCLING_HYBRID_CQ_V1','DOCLING_STRUCTURE_CQ_V2'].includes(state?.input?.cq_chunk_policy?.version)){
     return prepareNativeProductConfirmedHybridUpstream({store,catalog,libraryId,snapshotId,upstreamRunId});
   }
   need(row?.library_id===libraryId&&row.snapshot_id===snapshotId&&state?.library_id===libraryId&&state.snapshot_id===snapshotId&&state.run_id===upstreamRunId&&ledger?.run_id===upstreamRunId,'NATIVE_REUSE_SOURCE_MISMATCH');
@@ -291,7 +292,8 @@ export function createNativeFullChainProduct({store,governance,runtime,product,r
     },
     async start({libraryId,requestId,limits,capability='HYBRID',allowFormatRepairOnce=false,reuseCQFamilyFromRunId=null,reuseExtractionFromRunId=null,stopAfter=null,reuseCQFromRunId=null,acknowledgeUnknown=false,reuseCQDraftsFromRunId=null,rebuildSavedProposalsFromRunId=null,reuseSemanticFromRunId=null,unknownAcknowledgementRef=null,reuseOrganizationDraftFromRunId=null,resumeFromRunId=null,settledSemanticImportRef=null,buildFlowPolicy=null,settledCQImportRef=null,recoverSimplifiedFromRunId=null}){
       active(libraryId);need(!closed,'NATIVE_PRODUCT_CLOSED');
-      if(buildFlowPolicy===null){const existing=store.getRecord(REQUEST,hash([libraryId,requestId]));buildFlowPolicy=existing?(store.getRecord(RUN,existing.run_id)?.build_flow_policy??null):defaultBuildFlowPolicy;}
+      if(stopAfter==='CQ'){need(!recoverSimplifiedFromRunId&&!settledCQImportRef&&!settledSemanticImportRef&&!reuseCQFromRunId&&!reuseCQFamilyFromRunId&&!reuseExtractionFromRunId&&!reuseCQDraftsFromRunId&&!reuseSemanticFromRunId&&!reuseOrganizationDraftFromRunId&&!resumeFromRunId&&!rebuildSavedProposalsFromRunId,'NATIVE_CQ_ONLY_FRESH_SCOPE_REQUIRED',400);buildFlowPolicy=null;}
+      if(buildFlowPolicy===null&&stopAfter!=='CQ'){const existing=store.getRecord(REQUEST,hash([libraryId,requestId]));buildFlowPolicy=existing?(store.getRecord(RUN,existing.run_id)?.build_flow_policy??null):defaultBuildFlowPolicy;}
 
       need(recoverSimplifiedFromRunId===null||/^nrun_[a-f0-9]{32}$/.test(recoverSimplifiedFromRunId)&&buildFlowPolicy==='SIMPLIFIED_SOURCE_BLOCK_V1'&&!reuseCQFromRunId&&!reuseCQFamilyFromRunId&&!reuseExtractionFromRunId&&!reuseCQDraftsFromRunId&&!resumeFromRunId&&!settledCQImportRef&&!settledSemanticImportRef&&!acknowledgeUnknown,'NATIVE_SIMPLIFIED_RECOVERY_SCOPE_INVALID',400);
       need(buildFlowPolicy===null||buildFlowPolicy==='SIMPLIFIED_SOURCE_BLOCK_V1','NATIVE_BUILD_FLOW_POLICY_INVALID',400);
@@ -304,7 +306,7 @@ export function createNativeFullChainProduct({store,governance,runtime,product,r
       need(!resumeFromRunId||!reuseOrganizationDraftFromRunId&&!reuseSemanticFromRunId&&!reuseCQFamilyFromRunId&&!reuseExtractionFromRunId&&!reuseCQFromRunId&&!reuseCQDraftsFromRunId&&!rebuildSavedProposalsFromRunId&&!stopAfter&&!acknowledgeUnknown&&!unknownAcknowledgementRef,'NATIVE_UPSTREAM_INPUT_CONFLICT',400);
       if(resumeFromRunId)capability=rowFor(libraryId,resumeFromRunId).capability;
       need(['LEXICAL','VECTOR','HYBRID'].includes(capability),'NATIVE_CAPABILITY_INVALID',400);
-      need(stopAfter===null||stopAfter==='FAMILY','NATIVE_STOP_AFTER_INVALID',400);
+      need(stopAfter===null||['CQ','FAMILY'].includes(stopAfter),'NATIVE_STOP_AFTER_INVALID',400);
       need(reuseSemanticFromRunId===null||/^nrun_[a-f0-9]{32}$/.test(reuseSemanticFromRunId),'NATIVE_REUSE_RUN_ID_INVALID',400);
       need(reuseOrganizationDraftFromRunId===null||/^nrun_[a-f0-9]{32}$/.test(reuseOrganizationDraftFromRunId),'NATIVE_REUSE_RUN_ID_INVALID',400);
       need(!reuseOrganizationDraftFromRunId||!stopAfter&&!reuseCQFromRunId&&!reuseCQFamilyFromRunId&&!reuseExtractionFromRunId&&!reuseCQDraftsFromRunId&&!rebuildSavedProposalsFromRunId&&!reuseSemanticFromRunId,'NATIVE_UPSTREAM_INPUT_CONFLICT',400);
@@ -320,7 +322,7 @@ export function createNativeFullChainProduct({store,governance,runtime,product,r
       need(unknownAcknowledgementRef===null||(reuseSemanticFromRunId||reuseOrganizationDraftFromRunId)&&acknowledgeUnknown,'NATIVE_UNKNOWN_ACKNOWLEDGEMENT_INVALID',400);
       need(!(reuseSemanticFromRunId||reuseOrganizationDraftFromRunId)||!acknowledgeUnknown||unknownAcknowledgementRef,'NATIVE_UNKNOWN_ACKNOWLEDGEMENT_REQUIRED',400);
       need(!reuseCQFromRunId||(stopAfter==='FAMILY'||buildFlowPolicy==='SIMPLIFIED_SOURCE_BLOCK_V1')&&!reuseCQFamilyFromRunId,'NATIVE_CQ_CONTINUATION_SCOPE_REQUIRED',400);
-      if(stopAfter==='FAMILY')capability='LEXICAL';
+      if(stopAfter)capability='LEXICAL';
       need(typeof allowFormatRepairOnce==='boolean','NATIVE_FORMAT_REPAIR_POLICY_INVALID',400);
       need(reuseCQFamilyFromRunId===null||/^nrun_[a-f0-9]{32}$/.test(reuseCQFamilyFromRunId),'NATIVE_REUSE_RUN_ID_INVALID',400);
       need(reuseExtractionFromRunId===null||/^nrun_[a-f0-9]{32}$/.test(reuseExtractionFromRunId),'NATIVE_REUSE_RUN_ID_INVALID',400);
@@ -471,6 +473,10 @@ export function createNativeFullChainProduct({store,governance,runtime,product,r
       const programOutputRecovery={normalizations,relation_reviews:relationReviews,recovered_count:normalizations.filter(r=>['FORMAT_REPAIRED','BUSINESS_ITEMS_RECOVERED'].includes(r.status)).length,item_recovered_batches:itemRecoveries.length,recovered_item_count:itemRecoveries.reduce((n,r)=>n+(r.item_recovery?.recovered_count??0),0),skipped_item_count:unknownItemCounts?null:0,bad_fragment_count:normalizations.reduce((n,r)=>n+(r.item_recovery?.bad_fragment_count??0),0),unrecovered_count:normalizations.filter(r=>['UNPARSED_REVIEW_RETAINED','UNPARSED_BUSINESS_RETAINED','UNRECOVERABLE'].includes(r.status)).length,partial_review_count:relationReviews.filter(r=>['PARTIAL','PARTIAL_WARN'].includes(r.status)).length};
       const progress_summary=readNativeBuildProgress({store,row});
       return {...publicRow(row),progress_summary,partial_summary:store.getRecord('native_simplified_partial_summary_v1',runId)??null,active_library_knowledge:store.getRecord('native_library_knowledge_active_v1',libraryId)??null,status:current?row.status:'STALE',source_current:current,snapshot:snapshot?{...snapshot,progress_summary}:null,...resumeDescription(row),reusable_cq_family:reusable(row),reusable_cq:reusableCQ(row),reusable_cq_drafts:reusableCQDrafts(row),rebuildable_proposals:rebuildableProposals(row),reusable_semantic_packages:reusableSemantic(row),semantic_recovery:semanticRecovery(libraryId),organization_draft_recovery:organizationDraftRecovery(libraryId),organization_draft_imports:organizationDraftImports,program_output_recovery:programOutputRecovery,configuration:publicConfiguration()};
+    },
+    cqMaterials({libraryId,runId,cqRef}){
+      const row=rowFor(libraryId,runId);need(isCurrent(row),'NATIVE_SOURCE_STALE');
+      return readNativeCQMaterials({store,runId,cqRef});
     },
     semanticPackage({libraryId,runId,windowRef,after=0,offset=0,maxChars=6000}){
       const row=rowFor(libraryId,runId);need(isCurrent(row),'NATIVE_SOURCE_STALE');

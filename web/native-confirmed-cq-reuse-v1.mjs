@@ -21,7 +21,7 @@ export function prepareNativeProductConfirmedCQ({store,catalog,libraryId,snapsho
   const source=catalog.get(snapshotId,libraryId);
   need(source.library_id===libraryId&&source.snapshot_id===snapshotId&&source.documents?.length>0&&
     source.documents.every(d=>d.parser?.name==='docling'&&d.blocks?.length>0),code('DOCLING_REQUIRED'));
-  need(state.input&&ledger.input&&state.input.cq_chunk_policy?.version==='DOCLING_HYBRID_CQ_V1'&&
+  need(state.input&&ledger.input&&['DOCLING_HYBRID_CQ_V1','DOCLING_STRUCTURE_CQ_V2'].includes(state.input.cq_chunk_policy?.version)&&
     hash(state.input)===hash(ledger.input)&&ledger.binding===hash({input:ledger.input,limits:ledger.limits})&&
     hash(state.limits)===hash(ledger.limits)&&row.source_epoch===source.source_epoch&&
     ledger.input.library_ref===libraryId&&ledger.input.source_snapshot_ref===snapshotId&&ledger.input.source_fingerprint===source.fingerprint,code('SOURCE_MISMATCH'));
@@ -68,8 +68,9 @@ export function prepareNativeProductConfirmedCQ({store,catalog,libraryId,snapsho
   need(!plan.gaps?.length&&!plan.coverage?.some(c=>c.status==='UNREPRESENTED'),code('CQ_SCAN_INCOMPLETE'));
 
   const cqActors=retainedActors.filter(i=>i.role==='CQ'),scopeActors=new Map();
-  const hostExactMerge=merge?.mode==='HOST_EXACT_DEDUP';
-  need(!hostExactMerge||work.length<=1||new Set(chunked.chunks.flatMap(c=>(c.draft?.items??[]).map(i=>hash({question:i.question,notes:i.notes??null})))).size<=1,code('MERGE_CHANGED'));
+  const hostConservative=merge?.mode==='HOST_CONSERVATIVE_RANGE_DEDUP_V1'&&plan.policy?.range_contract==='CQ_UNIT_RANGES_V1';
+  const hostExactMerge=hostConservative||merge?.mode==='HOST_EXACT_DEDUP';
+  need(!hostExactMerge||hostConservative||work.length<=1||new Set(chunked.chunks.flatMap(c=>(c.draft?.items??[]).map(i=>hash({question:i.question,notes:i.notes??null})))).size<=1,code('MERGE_CHANGED'));
   need(cqActors.length===work.length+(hostExactMerge?0:1)&&stateActors.filter(i=>i.role==='CQ').length===cqActors.length,code('INVOCATION_REQUIRED'));
   for(const raw of cqActors){
     const a=actor(raw.invocation_ref,'CQ');

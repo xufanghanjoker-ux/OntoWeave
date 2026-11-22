@@ -99,8 +99,12 @@ function citationDetails(citation,turn,row,{preview=false}={}){
  const byRecord=mixed?`<section aria-label="逐条依据性质"><h4>逐条依据</h4>${natures.map(record=>`<article>${badge(record.origin_layer==='HUMAN_CORRECTION'?'人工修订':'资料抽取','quiet')}${record.text?`<p>${escape(record.text)}</p>`:''}</article>`).join('')}</section>`:'';
  const backgrounds=renderSources(true),evidence=renderSources(false);
  const original=backgrounds?`<section aria-label="修订前原文对照"><h4>修订前原文对照</h4><p class="lc-source-note">原文用于核对被修订内容，不代表支持更正后的表述。</p>${backgrounds}</section>`:'';
- if(preview)return definitionChoices+definitionUnbound+manual+evidence+original||`<p class="lc-evidence-empty">${citation.loading?'正在读取保留原文…':'此依据未附可定位的保留原文，不补造引句或位置。'}</p>`;
- return `${citation.representation==='INDEXED_SOURCE_WITH_MAPPING'?'<p class="lc-source-note">资料片段可能由多个正文块整理而成，请打开保留原文核对。</p>':''}${citation.text?`<p class="lc-citation-text">${escape(citation.text)}</p>`:''}${conditions.length?`<div class="lc-citation-conditions"><span>适用条件</span><p>${escape(conditions.join('；'))}</p></div>`:''}${byRecord}${definitionChoices}${definitionUnbound}${manual}${evidence}${original}${!manual&&!evidence&&!original&&!definitionChoices?`<p class="lc-evidence-empty">${citation.loading?'正在读取保留原文…':'此依据未附可定位的保留原文，不补造引句或位置。'}</p>`:''}`;
+ const graphTargets=list(citation.graph_targets).filter(target=>['entity','relation'].includes(target.kind)&&target.id&&target.label);
+ const graphLinks=graphTargets.length?`<section class="lc-source" aria-label="在图谱中定位"><h4>在图谱中定位</h4>
+ ${graphTargets.map(target=>button((target.kind==='entity'?'对象 · ':'关系 · ')+target.label,
+ target.kind==='entity'?'open-object':'open-relation',`data-id="${escape(target.id)}"`,'lc-open-source')).join('')}</section>`:'';
+ if(preview)return definitionChoices+definitionUnbound+manual+evidence+original+graphLinks||`<p class="lc-evidence-empty">${citation.loading?'正在读取保留原文…':'此依据未附可定位的保留原文，不补造引句或位置。'}</p>`;
+ return `${citation.representation==='INDEXED_SOURCE_WITH_MAPPING'?'<p class="lc-source-note">资料片段可能由多个正文块整理而成，请打开保留原文核对。</p>':''}${citation.text?`<p class="lc-citation-text">${escape(citation.text)}</p>`:''}${conditions.length?`<div class="lc-citation-conditions"><span>适用条件</span><p>${escape(conditions.join('；'))}</p></div>`:''}${byRecord}${definitionChoices}${definitionUnbound}${manual}${evidence}${original}${graphLinks}${!manual&&!evidence&&!original&&!definitionChoices&&!graphLinks?`<p class="lc-evidence-empty">${citation.loading?'正在读取保留原文…':'此依据未附可定位的保留原文，不补造引句或位置。'}</p>`:''}`;
 }
 export function chatEvidence(state){
  const turn=activeTurn(state),rows=usedCitations(turn),selected=rows.find(row=>matchingCitation(state,turn,row.number)),citation=selected?matchingCitation(state,turn,selected.number):null;

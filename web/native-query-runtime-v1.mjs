@@ -159,7 +159,7 @@ export async function runNativeQueryAgent({store,operation,tools,skillPaths,prom
     const admission=rounds.claim(name,args,context);let result;
     if(!admission.allowed)result=admission.response;
     else result=await original.call(name,args,{...context,query_runtime_control:true,retrieval_phase:admission.phase,provider_request_ref:admission.request_ref});
-    if(result?.result)result={...result,result:{...result.result,retrieval_control:{phase:admission.phase,content_batches:rounds.snapshot().content_batches,remaining_content_batches:Math.max(0,2-rounds.snapshot().content_batches),remaining_supplement_batches:rounds.snapshot().content_batches<2?1:0,new_content_allowed:!rounds.isAnswerPhase()}}};
+    if(['NO_NEW_INFORMATION','STOPPED_NO_PROGRESS'].includes(result?.result?.status)||result?.result?.repeated_no_progress)rounds.stopForNoProgress();
     original.recordModelProjection?.(name,result);return result;
   }};}
   let resolveTerminal,runtime,bridge,watcher,deadline,outputSaved=false,nativeCompleted=false,nativeMessage=null,lastPublicMessages=[];
@@ -194,7 +194,7 @@ export async function runNativeQueryAgent({store,operation,tools,skillPaths,prom
             const text=candidate&&(nativeMessage?.id===candidate.item_id||nativeMessage?.phase==='final_answer')?nativeMessage.text:candidate?.markdown;
             need(candidate&&typeof text==='string'&&text.trim(),'NATIVE_QUERY_PUBLIC_ANSWER_MISSING');
             need(operation.state().attempts.every(a=>a.outcome==='RETURNED'),'NATIVE_QUERY_REQUESTS_UNSETTLED');
-            tools.finishMarkdown({markdown:text,message_id:candidate.message_id});
+            await tools.finishMarkdown({markdown:text,message_id:candidate.message_id});
           }
           if(!tools.isComplete())fail('NATIVE_QUERY_ANSWER_NOT_SAVED');else complete();
         }

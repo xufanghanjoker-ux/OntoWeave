@@ -1,5 +1,6 @@
 /** Local invocation progress, using business payloads rather than generated IDs. */
 import {hash,clone,need} from './cq-discovery-store-v2.mjs';
+import {toolOutcome} from './native-tool-outcomes-v1.mjs';
 import {progressExecution} from './native-execution-controls-v1.mjs';
 const ignored=new Set(['run_id','invocation_ref','tool_call_ref','mcp_request_id','mcp_session_ref','request_ref','request_refs','proposal_ref','proposal_refs','record_ref','knowledge_ref','semantic_ref','record_sha256','raw_sha256','created_at','updated_at','started_at','ended_at','at','usage','gaps','warnings','normalizations','processing_summary','processing_results','save_feedback','budget_hint','execution_budget_hint','remaining','argument_normalization_refs','feedback_generation','actual_connection_count']);
 export function observableBusiness(value,key=''){
@@ -11,12 +12,13 @@ export function createNativeObservableProgress({store,run,invocationRef,now=()=>
  if(!progressExecution(run.state()))return {observe(){}};
  const kind='native_agent_observable_progress_v1';
  return {observe({name,args,result,definition,observation,batchRef=null,batchComplete=true}){
-  if(result?.ok===false)return;
+  const outcome=toolOutcome(result);
+  if(result?.ok===false&&outcome!=='LOCAL_REJECT')return;
   const body=result?.result??result,finish=body?.finished===true||body?.completed===true||body?.extraction_complete===true;
   const value=observation!==undefined?{name,observed:observableBusiness(observation)}:definition?.annotations?.readOnlyHint===true?{name,read:observableBusiness(body)}:
    /next_organization_focus/.test(name)?{name,phase:body?.phase,refs:body?.semantic_refs}:
    {name,args:observableBusiness(args),...(finish?{finished:true}:{})};
-  const signature=hash(value),prior=store.getRecord(kind,invocationRef)??{invocation_ref:invocationRef,run_id:run.state().run_id,seen:[],stalled_calls:0,last_progress_at:now()},fresh=!prior.seen.includes(signature);
+  const signature=hash(value),prior=store.getRecord(kind,invocationRef)??{invocation_ref:invocationRef,run_id:run.state().run_id,seen:[],stalled_calls:0,last_progress_at:now()},fresh=outcome!=='LOCAL_REJECT'&&!prior.seen.includes(signature);
   // All calls from one model response share one opportunity to receive feedback.
   // Inspect every material state change, but charge at most one stalled round.
   const sameBatch=batchRef!==null&&prior.pending_batch?.request_ref===batchRef;

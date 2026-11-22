@@ -5,7 +5,7 @@ const need=(ok,code,status=400)=>{if(!ok)throw Object.assign(Error(code),{code,s
 const fields=(value,keys)=>need(value&&typeof value==='object'&&!Array.isArray(value)&&Object.keys(value).every(k=>keys.includes(k)),'NATIVE_HTTP_ARGUMENTS_INVALID');
 export function createNativeFullChainHttp({host,json,parseBody}) {
   return async function handle({req,res,pathname}) {
-    const route=pathname.match(/^\/api\/product\/libraries\/(kb_[a-f0-9-]{36})\/native-full-chain\/runs(?:\/([A-Za-z0-9_-]{1,160})(?:\/(status|graph|query|semantic-packages|artifacts|library-review|saved-stage-recovery|conflicts)(?:\/(decisions|applications|preview|analysis))?)?)?$/);
+    const route=pathname.match(/^\/api\/product\/libraries\/(kb_[a-f0-9-]{36})\/native-full-chain\/runs(?:\/([A-Za-z0-9_-]{1,160})(?:\/(status|graph|query|cq-materials|semantic-packages|artifacts|library-review|saved-stage-recovery|conflicts)(?:\/(decisions|applications|preview|analysis))?)?)?$/);
     if(!route)return false;
     need(host,'NATIVE_BUILD_NOT_CONNECTED',409);
     const [,libraryId,runId,action,reviewAction]=route;need(!reviewAction||action==='library-review','NATIVE_HTTP_ARGUMENTS_INVALID');
@@ -19,7 +19,7 @@ export function createNativeFullChainHttp({host,json,parseBody}) {
       need(body.consent===true,'NATIVE_BUILD_CONSENT_REQUIRED',428);
       need(/^[a-f0-9-]{36}$/.test(body.request_id??''),'NATIVE_REQUEST_ID_REQUIRED');
       need(body.allow_format_repair_once===undefined||typeof body.allow_format_repair_once==='boolean','NATIVE_FORMAT_REPAIR_POLICY_INVALID');
-      need(body.stop_after===undefined||body.stop_after==='FAMILY','NATIVE_STOP_AFTER_INVALID');
+      need(body.stop_after===undefined||['CQ','FAMILY'].includes(body.stop_after),'NATIVE_STOP_AFTER_INVALID');
       need(body.reuse_semantic_from_run_id===undefined||typeof body.reuse_semantic_from_run_id==='string'&&/^nrun_[a-f0-9]{32}$/.test(body.reuse_semantic_from_run_id),'NATIVE_REUSE_RUN_ID_INVALID');
       need(body.reuse_organization_draft_from_run_id===undefined||typeof body.reuse_organization_draft_from_run_id==='string'&&/^nrun_[a-f0-9]{32}$/.test(body.reuse_organization_draft_from_run_id),'NATIVE_REUSE_RUN_ID_INVALID');
       need(body.rebuild_saved_proposals_from_run_id===undefined||typeof body.rebuild_saved_proposals_from_run_id==='string'&&/^nrun_[a-f0-9]{32}$/.test(body.rebuild_saved_proposals_from_run_id),'NATIVE_REUSE_RUN_ID_INVALID');
@@ -95,6 +95,12 @@ export function createNativeFullChainHttp({host,json,parseBody}) {
       need(limit>=1&&limit<=NATIVE_ARTIFACT_PAGE_LIMIT,'NATIVE_ARTIFACT_PAGE_INVALID');
       need((docRef===null||docRef.length>0&&docRef.length<=512)&&(ref===null||ref.length>0&&ref.length<=1024),'NATIVE_ARTIFACT_SELECTION_INVALID');
       json(res,200,await host.artifacts({libraryId,runId,kind,after,limit,docRef,ref}));return true;
+    }
+    if(action==='cq-materials'&&req.method==='GET'){
+      const search=new URL(req.url,'http://localhost').searchParams;
+      need([...search.keys()].every(k=>k==='cq_ref'&&search.getAll(k).length===1),'NATIVE_HTTP_ARGUMENTS_INVALID');
+      const cqRef=search.get('cq_ref');need(/^native_cq_[a-f0-9]{64}$/.test(cqRef??''),'NATIVE_CQ_REF_INVALID');
+      json(res,200,await host.cqMaterials({libraryId,runId,cqRef}));return true;
     }
     if(action==='semantic-packages'&&req.method==='GET'){
       const search=new URL(req.url,'http://localhost').searchParams;

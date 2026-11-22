@@ -108,7 +108,7 @@ def convert(source, target):
         )
     else:
         options = PdfPipelineOptions()
-        artifacts = Path(__file__).resolve().parent.parent / 'local-runs' / 'docling-models' / 'artifacts'
+        artifacts = Path(__file__).resolve().parent.parent / '.ontoweave' / 'docling-models' / 'artifacts'
         if (artifacts / '.download-complete').exists():
             options.artifacts_path = artifacts
             options.ocr_options = RapidOcrOptions()
@@ -116,7 +116,7 @@ def convert(source, target):
             pinned = artifacts.parent / 'ocr-pinned'
             names = ['PP-OCRv6_det_small.onnx', 'ch_ppocr_mobile_v2.0_cls_mobile.onnx', 'PP-OCRv6_rec_small.onnx', 'ppocrv6_dict.txt']
             if not all((pinned / name).is_file() for name in names):
-                raise FileNotFoundError('Missing pinned OCR models; run npm run setup')
+                raise FileNotFoundError('Missing pinned OCR models; run npm run setup:parser')
             options.ocr_options = RapidOcrOptions(det_model_path=str(pinned / names[0]), cls_model_path=str(pinned / names[1]),
                                                  rec_model_path=str(pinned / names[2]), rec_keys_path=str(pinned / names[3]))
         options.enable_remote_services = False

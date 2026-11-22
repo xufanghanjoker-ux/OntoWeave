@@ -1,0 +1,11 @@
+CREATE SCHEMA extraction_v2;
+CREATE TABLE extraction_v2.schema_version(version integer PRIMARY KEY, sha256 text NOT NULL);
+CREATE TABLE extraction_v2.runs(run_id text PRIMARY KEY, manifest jsonb NOT NULL, sha256 text NOT NULL, created_at timestamptz NOT NULL DEFAULT clock_timestamp());
+CREATE TABLE extraction_v2.tasks(task_ref text PRIMARY KEY, run_id text NOT NULL REFERENCES extraction_v2.runs, manifest jsonb NOT NULL, status text NOT NULL DEFAULT 'PREPARED', frozen boolean NOT NULL DEFAULT false);
+CREATE TABLE extraction_v2.responses(response_ref text PRIMARY KEY, task_ref text NOT NULL REFERENCES extraction_v2.tasks, identity jsonb NOT NULL, raw bytea NOT NULL, sha256 text NOT NULL, delivery jsonb NOT NULL, late boolean NOT NULL, created_at timestamptz NOT NULL DEFAULT clock_timestamp());
+CREATE TABLE extraction_v2.mentions(mention_ref text PRIMARY KEY, task_ref text NOT NULL REFERENCES extraction_v2.tasks, name text NOT NULL, scope jsonb NOT NULL, declarations jsonb NOT NULL DEFAULT '[]');
+CREATE TABLE extraction_v2.candidates(candidate_ref text PRIMARY KEY, task_ref text NOT NULL REFERENCES extraction_v2.tasks, disposition text NOT NULL, payload jsonb NOT NULL);
+CREATE TABLE extraction_v2.candidate_sources(candidate_ref text NOT NULL REFERENCES extraction_v2.candidates, source_key text NOT NULL, payload jsonb NOT NULL, PRIMARY KEY(candidate_ref,source_key));
+CREATE TABLE extraction_v2.items(item_ref text PRIMARY KEY, response_ref text NOT NULL REFERENCES extraction_v2.responses, policy text NOT NULL, byte_start integer NOT NULL, byte_end integer NOT NULL, payload jsonb NOT NULL, candidate_ref text REFERENCES extraction_v2.candidates, UNIQUE(response_ref,policy,byte_start));
+CREATE TABLE extraction_v2.receipts(receipt_ref text PRIMARY KEY, response_ref text NOT NULL REFERENCES extraction_v2.responses, policy text NOT NULL, payload jsonb NOT NULL, UNIQUE(response_ref,policy));
+CREATE INDEX extraction_v2_tasks_run ON extraction_v2.tasks(run_id);

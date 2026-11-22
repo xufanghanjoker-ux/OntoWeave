@@ -1,0 +1,24 @@
+{
+  "contract": "ontoweave-provider-material-binding/1",
+  "version": "ontology-material-context/2",
+  "predecessor_sha256": "be3c6b330e17600622ffbe0358158203fe43aa591682139fe3b0c11b422e608c",
+  "files": {
+    "docs/skill-drafts/ontoweave-ontology-alignment-v1/SKILL.md": "c5978524cba7146091e6b83e8bf49e7932eac5be379ecc60a6b390379322f830",
+    "python/ontoweave_front_half/tool_execution.py": "c895b42271bea58dd5489b3dcea62dd2a931b4eb45c9184fb65bc743ff4081ae",
+    "python/ontoweave_identity/native.py": "2612e96fd66830fe02151edb55d49d58edc356f80293ee473e941a644add0769",
+    "python/ontoweave_ontology/agent.py": "d0d1fbabb77772dd2baad45ab644d3b908cc1e5d657327696e1c9c92a8603f73",
+    "python/ontoweave_ontology/material_context.py": "0185a8cd87e1bf04d45b8ac81661612bc0ed5c4a824cb8d576ec6b3a0b2c8b3a",
+    "python/ontoweave_ontology/native.mjs": "ae9c62ac5f1ccd04763ca5124b063784907562451d1db5eb6e0788830fdc3cf9",
+    "python/ontoweave_ontology/native.py": "68a31194d17bfac2c552bdbf6d7a8c7b13eb333f6d494616c599d4178c9642d9",
+    "python/ontoweave_ontology/receiver.py": "316cb518c390bca3e98a9d95aef9d098d03fe43399db304a11ba159df5c70d2d",
+    "python/ontoweave_ontology/recovery.py": "21257d671beb6d546f0656eaec9faa44012c485c33c6738e9fe4a3d063a3fca3",
+    "python/ontoweave_ontology/service.py": "7296f927cb7fd2b7fbc9a7d18933f5021aa9b8491fe2f6ab489f0280ba9e63b7",
+    "python/ontoweave_ontology/signatures.py": "353b5af2128af03e84ab48dcf07c9861d9457d4639611033e7f0585d8c550f07",
+    "web/native-agent-mcp-v1.mjs": "3b830b4894862c7fc2b9a86dd4c5a65b33acd1cd3be0df20ca1ab53963e2e95c",
+    "web/native-agent-runtime-v1.mjs": "50ce7f04d0b859b103da1b9c5f463d38541374c56de522b275ad8f5f783fe4ab",
+    "web/native-observable-progress-v1.mjs": "4672cf43dd59022518f84e9b701d9679ecd34a12c10544b173b60452634917d7",
+    "web/native-tool-outcomes-v1.mjs": "f39667bd4a2002ca10afe8293dbf702a80e33656391017ae5b095ac91250d458",
+    "web/source-model-registry-v1.mjs": "c6e2aab938fb930077739759f4072a672ee7c75a551722f134286db78eb09098",
+    "web/source-models-v1.mjs": "90eeb2db80b87d403689f02b2d4a93af1416799d841edfb2130b8387bad82dad"
+  }
+}

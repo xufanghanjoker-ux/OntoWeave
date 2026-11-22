@@ -12,29 +12,29 @@ export function supportedNode(version = process.versions.node) {
 export function cleanParserEnv() {
   return { PATH: process.env.PATH, ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}),
     LANG: 'en_US.UTF-8', TMPDIR: process.env.TMPDIR || process.env.TEMP || '/tmp',
-    HF_HOME: resolve(project, 'local-runs/docling-models'), HF_HUB_DISABLE_TELEMETRY: '1',
+    HF_HOME: resolve(project, '.ontoweave/docling-models'), HF_HUB_DISABLE_TELEMETRY: '1',
     HF_HUB_OFFLINE: '1', OMP_NUM_THREADS: '4' };
 }
 export function parserHealth({ base = project, python = parserPython(), checkPackage = true } = {}) {
-  const file = resolve(base, 'local-runs/setup-manifest.json');
-  if (!existsSync(python)) return { status: 'MISSING_ENV', remedy: '安装 Python 3.12 后运行 npm run setup' };
-  if (!existsSync(file)) return { status: 'NOT_VERIFIED', remedy: '运行 npm run setup；已有缓存将复用并校验' };
+  const file = resolve(base, '.ontoweave/setup-manifest.json');
+  if (!existsSync(python)) return { status: 'MISSING_ENV', remedy: '安装 Python 3.12 后运行 npm run setup:parser' };
+  if (!existsSync(file)) return { status: 'NOT_VERIFIED', remedy: '运行 npm run setup:parser；已有缓存将复用并校验' };
   try {
     const manifest = JSON.parse(readFileSync(file));
-    if (manifest.status !== 'READY') return { status: manifest.status, remedy: '重新运行 npm run setup（不会自动重传业务资料）' };
+    if (manifest.status !== 'READY') return { status: manifest.status, remedy: '重新运行 npm run setup:parser（不会自动重传业务资料）' };
     if (!Array.isArray(manifest.files) || !manifest.files.length) throw Error('EMPTY_MANIFEST');
     if (checkPackage) {
       const check = spawnSync(python, ['-c', 'import sys;from importlib.metadata import version;assert sys.version_info[:2]==(3,12);print(version("docling"))'], { encoding: 'utf8', env: cleanParserEnv(), timeout: 10000 });
-      if (check.status !== 0 || check.stdout.trim() !== manifest.docling) return { status: 'BROKEN_ENV', remedy: '解析依赖版本变化或丢失；运行 npm run setup' };
+      if (check.status !== 0 || check.stdout.trim() !== manifest.docling) return { status: 'BROKEN_ENV', remedy: '解析依赖版本变化或丢失；运行 npm run setup:parser' };
     }
-    if (manifest.lock_sha256 && createHash('sha256').update(readFileSync(resolve(base, 'web/requirements-docling.lock'))).digest('hex') !== manifest.lock_sha256) return { status: 'DEPENDENCIES_CHANGED', remedy: '依赖锁已变化；运行 npm run setup 重新验收' };
+    if (manifest.lock_sha256 && createHash('sha256').update(readFileSync(resolve(base, 'web/requirements-docling.lock'))).digest('hex') !== manifest.lock_sha256) return { status: 'DEPENDENCIES_CHANGED', remedy: '依赖锁已变化；运行 npm run setup:parser 重新验收' };
     for (const row of manifest.files) {
-      const path = resolve(base, row.path), rel = relative(resolve(base, 'local-runs'), path);
+      const path = resolve(base, row.path), rel = relative(resolve(base, '.ontoweave'), path);
       if (rel === '..' || rel.startsWith('..' + sep) || isAbsolute(rel)) throw Error('INVALID_MANIFEST');
-      if (createHash('sha256').update(readFileSync(path)).digest('hex') !== row.sha256) return { status: 'CORRUPT_CACHE', file: row.path, remedy: '模型缓存损坏；运行 npm run setup 修复并验证' };
+      if (createHash('sha256').update(readFileSync(path)).digest('hex') !== row.sha256) return { status: 'CORRUPT_CACHE', file: row.path, remedy: '模型缓存损坏；运行 npm run setup:parser 修复并验证' };
     }
     return { status: 'READY', tested_at: manifest.at, docling: manifest.docling, files: manifest.files.length };
-  } catch { return { status: 'INCOMPLETE_CACHE', remedy: '模型缺失或初始化中断；运行 npm run setup' }; }
+  } catch { return { status: 'INCOMPLETE_CACHE', remedy: '模型缺失或初始化中断；运行 npm run setup:parser' }; }
 }
 export function doctor({ storage = resolve(project, 'local-runs/workbench'), deep = false } = {}) {
   const python = spawnSync(parserPython(), ['-c', 'import sys;print(".".join(map(str,sys.version_info[:2])))'], { encoding: 'utf8', timeout: 10000 });

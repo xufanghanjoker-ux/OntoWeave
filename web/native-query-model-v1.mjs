@@ -12,8 +12,8 @@ export function normalizeNativeQueryToolNames(bytes,{tools}) {
   const exact=new Map(),aliases=new Map();
   function add(wire,namespace,local,shape){
     const entry={wire,namespace,local,shape};exact.set(wire,entry);
-    if(!local.startsWith('lightog_'))return;
-    for(const alias of [local,local.slice('lightog_'.length)]){
+    const supported=local.startsWith('lightog_')?[local,local.slice('lightog_'.length)]:namespace==='mcp__lightog_native'?[local]:[];
+    for(const alias of supported){
       if(!aliases.has(alias))aliases.set(alias,new Map());aliases.get(alias).set(wire,entry);
     }
   }

@@ -9,7 +9,7 @@ const text = value => typeof value === 'string' && value.length > 0;
 const strings = value => Array.isArray(value) ? value.filter(v => typeof v === 'string') : [];
 const pick = (value, keys) => Object.fromEntries(keys.filter(k => ['string', 'number', 'boolean'].includes(typeof value?.[k])).map(k => [k, value[k]]));
 const count = value => Number.isSafeInteger(value) && value >= 0 ? value : null;
-const policyFields = ['engine', 'max_tokens', 'tokenizer', 'token_count_exact', 'model_tokenizer_match', 'merge_peers', 'repeat_table_header', 'always_emit_headings', 'budget_scope', 'source_mapping', 'window_composition'];
+const policyFields = ['engine', 'max_tokens', 'tokenizer', 'token_count_exact', 'model_tokenizer_match', 'merge_peers', 'repeat_table_header', 'always_emit_headings', 'budget_scope', 'source_mapping', 'window_composition','range_contract','structure_strategy','split_strategy'];
 const summaryFields = ['documents', 'chunks', 'windows', 'gaps', 'source_blocks', 'represented_blocks', 'source_chunks'];
 
 function provenance(value) {
@@ -107,7 +107,8 @@ function chunkItem(row, kind, source, plan) {
     contextualized_text: typeof row.contextualized_text === 'string' ? row.contextualized_text : row.text,
     headings: [...new Set([...strings(row.headings), ...children.flatMap(c => strings(c.headings))])],
     token_count: count(row.token_count ?? row.estimated_tokens), token_budget: count(row.token_budget), tokenizer: typeof row.tokenizer === 'string' ? row.tokenizer : null,
-    ...pick(row, ['token_count_exact', 'serialization_status', 'source_mapping', 'material_format', 'status']),
+    ...(Array.isArray(row.units)?{units:row.units.filter(object).map(u=>({...pick(u,['label','ordinal','unit_ref','text','text_sha256','context','block_id','fragment']),headings:strings(u.headings),source_items:(Array.isArray(u.source_items)?u.source_items:[]).filter(object).map(i=>({...pick(i,['self_ref','role','label']),parent_refs:strings(i.parent_refs),provenance:provenance(i.provenance)}))}))}:{}),
+    ...pick(row, ['token_count_exact', 'serialization_status', 'source_mapping', 'material_format', 'status','manifest_ref','plan_ref','core_text_tokens','context_tokens','material_sha256']),
     source_block_refs: strings(row.source_block_refs), source_chunk_refs: kind === 'windows' ? strings(row.source_chunk_refs) : [ref],
     source_items: (Array.isArray(row.source_items) ? row.source_items : []).filter(object).map(s => ({...pick(s, ['self_ref', 'label', 'role']), parent_refs: strings(s.parent_refs), provenance: provenance(s.provenance)})),
     warnings: strings(row.warnings)

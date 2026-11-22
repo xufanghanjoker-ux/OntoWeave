@@ -1,0 +1,11 @@
+CREATE SCHEMA extraction_v3;
+CREATE TABLE extraction_v3.schema_version(version integer PRIMARY KEY, sha256 text NOT NULL);
+CREATE TABLE extraction_v3.runs(run_id text PRIMARY KEY, manifest jsonb NOT NULL, sha256 text NOT NULL, created_at timestamptz NOT NULL DEFAULT clock_timestamp());
+CREATE TABLE extraction_v3.tasks(task_ref text PRIMARY KEY, run_id text NOT NULL REFERENCES extraction_v3.runs, manifest jsonb NOT NULL, status text NOT NULL DEFAULT 'PREPARED', frozen boolean NOT NULL DEFAULT false);
+CREATE TABLE extraction_v3.responses(response_ref text PRIMARY KEY, task_ref text NOT NULL REFERENCES extraction_v3.tasks, identity jsonb NOT NULL, raw bytea NOT NULL, sha256 text NOT NULL, delivery jsonb NOT NULL, late boolean NOT NULL, created_at timestamptz NOT NULL DEFAULT clock_timestamp());
+CREATE TABLE extraction_v3.mentions(mention_ref text PRIMARY KEY, task_ref text NOT NULL REFERENCES extraction_v3.tasks, name text NOT NULL, scope jsonb NOT NULL, declarations jsonb NOT NULL DEFAULT '[]');
+CREATE TABLE extraction_v3.candidates(candidate_ref text PRIMARY KEY, task_ref text NOT NULL REFERENCES extraction_v3.tasks, disposition text NOT NULL, payload jsonb NOT NULL);
+CREATE TABLE extraction_v3.candidate_sources(candidate_ref text NOT NULL REFERENCES extraction_v3.candidates, source_key text NOT NULL, payload jsonb NOT NULL, PRIMARY KEY(candidate_ref,source_key));
+CREATE TABLE extraction_v3.items(item_ref text PRIMARY KEY, response_ref text NOT NULL REFERENCES extraction_v3.responses, policy text NOT NULL, byte_start integer NOT NULL, byte_end integer NOT NULL, payload jsonb NOT NULL, candidate_ref text REFERENCES extraction_v3.candidates, UNIQUE(response_ref,policy,byte_start));
+CREATE TABLE extraction_v3.receipts(receipt_ref text PRIMARY KEY, response_ref text NOT NULL REFERENCES extraction_v3.responses, policy text NOT NULL, payload jsonb NOT NULL, UNIQUE(response_ref,policy));
+CREATE INDEX extraction_v3_tasks_run ON extraction_v3.tasks(run_id);

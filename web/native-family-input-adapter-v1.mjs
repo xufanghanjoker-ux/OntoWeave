@@ -28,7 +28,7 @@ export function nativeFamilyDefinitions({knowledgeBuildPolicy} = {}) {
 function copyItemPayload(item) {
   need(record(item) && textField(item.cq_ref) && textField(item.question), 'NATIVE_FAMILY_CQ_INVALID');
   need(Object.keys(item).every(key => ['cq_ref','question','source_hint','notes','source_refs','read_receipt_refs',
-    'source_status','source_unknown_reason'].includes(key)),
+    'source_status','source_unknown_reason','ranges','fallback_ranges','range_status','range_warnings','local_questions'].includes(key)),
     'NATIVE_FAMILY_CQ_INVALID');
   for (const key of ['source_hint','notes']) {
     if (own(item, key)) need(textField(item[key]), 'NATIVE_FAMILY_CQ_INVALID');
@@ -48,6 +48,7 @@ function copyItemPayload(item) {
     need(!own(item, 'source_unknown_reason'), 'NATIVE_FAMILY_SOURCE_STATUS_INVALID');
   }
   return {
+    ...Object.fromEntries(['ranges','fallback_ranges','range_status','range_warnings','local_questions'].filter(k=>own(item,k)).map(k=>[k,clone(item[k])])),
     question:item.question,
     ...(own(item, 'source_hint') ? {source_hint:item.source_hint} : {}),
     ...(own(item, 'notes') ? {notes:item.notes} : {}),
