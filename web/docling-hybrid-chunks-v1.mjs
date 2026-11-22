@@ -9,14 +9,14 @@ import {hash,clone,need,textField} from './cq-discovery-store-v2.mjs';
 import {cleanParserEnv,parserPython} from './runtime.mjs';
 
 const ROOT=fileURLToPath(new URL('../',import.meta.url));
-const VERSION='docling-hybrid-chunks/1';
+const VERSION='docling-structure-blocks/2';
 const bytesHash=value=>createHash('sha256').update(value).digest('hex');
 const DOC_ID=/^[a-f0-9-]{36}$/;
-export const DEFAULT_DOCLING_HYBRID_POLICY=Object.freeze({engine:'DoclingHybridChunker',max_tokens:8000,tokenizer:'cl100k_base',
+export const DEFAULT_DOCLING_HYBRID_POLICY=Object.freeze({engine:'DoclingHybridChunker',max_tokens:5000,tokenizer:'cl100k_base',
   token_count_exact:true,model_tokenizer_match:'NOT_ASSERTED',merge_peers:true,repeat_table_header:true,
   always_emit_headings:true,
-  budget_scope:'CONTEXTUALIZED_SOURCE_TEXT',source_mapping:'DOCLING_ITEM_REFERENCES',
-  window_composition:'ADJACENT_NATIVE_CHUNKS_WITHIN_DOCUMENT_V1'});
+  structure_strategy:'DOCLING_ORDERED_UNITS_AND_CONTEXT_V2',split_strategy:'HYBRID_CHUNKER_SEGMENT_WITH_FROZEN_CELL_COORDINATES',budget_scope:'SERIALIZED_MATERIAL_WITH_UNIT_LABELS',range_contract:'CQ_UNIT_RANGES_V1',source_mapping:'DOCLING_ITEM_REFERENCES',
+  window_composition:'ONE_PROCESSING_BLOCK_NO_SECOND_PACKING_V2'});
 
 function retainedSource(doc,storage){
   const sourceId=doc.parser?.document_id;
@@ -34,7 +34,7 @@ function retainedSource(doc,storage){
   'HYBRID_CHUNK_RAW_SOURCE_MISMATCH');
   const originalPath=join(dir,'original'+parsed.extension);
   need(existsSync(originalPath)&&bytesHash(readFileSync(originalPath))===parsed.original_sha256,'HYBRID_CHUNK_ORIGINAL_SOURCE_CHANGED');
-  return {doc_ref:doc.doc_id,revision:doc.revision,raw_path:rawPath,raw_sha256:bytesHash(rawBytes),source_document_id:sourceId};
+  return {doc_ref:doc.doc_id,revision:doc.revision,title:doc.title??'',raw_path:rawPath,raw_sha256:bytesHash(rawBytes),source_document_id:sourceId};
 }
 
 function runWorker(python,args,env){
@@ -50,24 +50,24 @@ function runWorker(python,args,env){
 }
 
 /** Reuse retained Docling JSON; no reparse, OCR, model, or embedding request. */
-export async function createDoclingHybridChunkPlan({snapshot,documentStorage,maxTokens=8000,tokenizerName='cl100k_base',python=parserPython(),outputDirectory}={}){
+export async function createDoclingHybridChunkPlan({snapshot,documentStorage,maxTokens=5000,tokenizerName='cl100k_base',python=parserPython(),outputDirectory,structureBlocks=true}={}){
   need(snapshot&&textField(snapshot.snapshot_id)&&Array.isArray(snapshot.documents)&&snapshot.documents.length>0,'HYBRID_CHUNK_SNAPSHOT_REQUIRED');
   need(textField(documentStorage)&&existsSync(python),'HYBRID_CHUNK_ENVIRONMENT_REQUIRED');
-  need(Number.isSafeInteger(maxTokens)&&maxTokens>0&&tokenizerName==='cl100k_base','HYBRID_CHUNK_POLICY_INVALID');
+  need(Number.isSafeInteger(maxTokens)&&maxTokens>0&&(!structureBlocks||maxTokens<=5000)&&tokenizerName==='cl100k_base','HYBRID_CHUNK_POLICY_INVALID');
   const seen=new Set();
   for(const doc of snapshot.documents){need(textField(doc.doc_id)&&!seen.has(doc.doc_id)&&textField(doc.revision)&&typeof doc.content==='string'&&Array.isArray(doc.blocks),'HYBRID_CHUNK_SOURCE_INVALID');seen.add(doc.doc_id);}
   const documents=snapshot.documents.map(doc=>retainedSource(doc,documentStorage));
   const scratch=mkdtempSync(join(tmpdir(),'lightog-hybrid-'));
   try{
     const requestPath=join(scratch,'request.json'),responsePath=join(scratch,'response.json');
-    writeFileSync(requestPath,JSON.stringify({max_tokens:maxTokens,tokenizer_name:tokenizerName,documents}),{mode:0o600});
-    const env={...cleanParserEnv(),TIKTOKEN_CACHE_DIR:resolve(ROOT,'local-runs/docling-models/tiktoken')};
+    writeFileSync(requestPath,JSON.stringify({max_tokens:maxTokens,tokenizer_name:tokenizerName,structure_blocks:structureBlocks,documents}),{mode:0o600});
+    const env={...cleanParserEnv(),TIKTOKEN_CACHE_DIR:resolve(ROOT,'.ontoweave/docling-models/tiktoken')};
     await runWorker(python,[resolve(ROOT,'web/docling_hybrid_chunk_worker.py'),requestPath,responsePath],env);
     const response=JSON.parse(readFileSync(responsePath,'utf8'));
     need(response.documents?.length===documents.length&&response.versions&&Array.isArray(response.tokenizer_data_sha256),'HYBRID_CHUNK_WORKER_OUTPUT_INVALID');
-    const policy={...DEFAULT_DOCLING_HYBRID_POLICY,max_tokens:maxTokens,versions:response.versions,tokenizer_data_sha256:response.tokenizer_data_sha256,
-      implementation_sha256:bytesHash(readFileSync(resolve(ROOT,'web/docling_hybrid_chunk_worker.py')))};
-    const binding={version:VERSION,source_snapshot_ref:snapshot.snapshot_id,source_fingerprint:snapshot.fingerprint??hash(snapshot),policy,
+    const policy={...DEFAULT_DOCLING_HYBRID_POLICY,...(!structureBlocks?{range_contract:null,window_composition:'ADJACENT_NATIVE_CHUNKS_WITHIN_DOCUMENT_V1'}:{}),max_tokens:maxTokens,versions:response.versions,tokenizer_data_sha256:response.tokenizer_data_sha256,
+      implementation_sha256:bytesHash(Buffer.concat(['web/docling_hybrid_chunk_worker.py',...(structureBlocks?['web/docling_structure_blocks_v2.py']:[])].map(p=>readFileSync(resolve(ROOT,p)))))};
+    const binding={version:structureBlocks?VERSION:'docling-hybrid-chunks/1',source_snapshot_ref:snapshot.snapshot_id,source_fingerprint:snapshot.fingerprint??hash(snapshot),policy,
       sources:documents.map(({raw_path,...source})=>source)};
     const plan_ref='hybrid_plan_'+hash(binding),chunks=[],windows=[],gaps=[],coverage=[],documentSummary=[];
     for(const [index,doc] of snapshot.documents.entries()){
@@ -78,7 +78,8 @@ export async function createDoclingHybridChunkPlan({snapshot,documentStorage,max
         need(Number.isSafeInteger(item.ordinal)&&typeof item.text==='string'&&typeof item.contextualized_text==='string'&&Number.isSafeInteger(item.token_count)&&item.token_count>=0&&Array.isArray(item.source_items)&&Array.isArray(item.headings),'HYBRID_CHUNK_WORKER_CHUNK_INVALID');
         const source_block_refs=[...new Set(item.source_items.flatMap(s=>[s.self_ref,...(s.parent_refs??[])]).filter(ref=>blocks.has(ref)))];
         const chunk_ref='hybrid_chunk_'+hash({plan_ref,doc_ref:doc.doc_id,revision:doc.revision,...item});
-        const value={chunk_ref,plan_ref,doc_ref:doc.doc_id,revision:doc.revision,title:doc.title??'',...clone(item),source_block_refs,
+        const units=(item.units??[]).map(u=>({...clone(u),unit_ref:'cq_unit_'+hash({plan_ref,doc_ref:doc.doc_id,revision:doc.revision,chunk_ref,label:u.label,text:u.text,context:u.context,fragment:u.fragment})}));
+        const value={chunk_ref,plan_ref,doc_ref:doc.doc_id,revision:doc.revision,title:doc.title??'',...clone(item),...(structureBlocks?{units}:{}),source_block_refs,
           token_budget:maxTokens,tokenizer:tokenizerName,token_count_exact:true,model_tokenizer_match:'NOT_ASSERTED',
           serialization_status:'DOCLING_RESERIALIZED_NOT_EXACT_FLAT_TEXT_SPANS',source_mapping:'DOCLING_ITEM_REFERENCES',
           warnings:[...new Set([...(item.warnings??[]),...(!source_block_refs.length?['HYBRID_CHUNK_NO_FLAT_BLOCK_MAPPING']:[])])]};
@@ -100,6 +101,7 @@ export async function createDoclingHybridChunkPlan({snapshot,documentStorage,max
           source_chunk_refs:children.map(c=>c.chunk_ref),source_block_refs:[...new Set(children.flatMap(c=>c.source_block_refs))],
           token_budget:maxTokens,tokenizer:tokenizerName,token_count_exact:true,model_tokenizer_match:'NOT_ASSERTED',
           serialization_status:'COMPOSED_DOCLING_CHUNKS_NOT_EXACT_FLAT_TEXT_SPANS',source_mapping:'DOCLING_ITEM_REFERENCES',
+          ...(structureBlocks?{units:clone(children[0].units),manifest_ref:'cq_manifest_'+hash({plan_ref,doc_ref:doc.doc_id,revision:doc.revision,window_ref,units:children[0].units})}:{}),
           warnings:[...new Set([...item.warnings,...children.flatMap(c=>c.warnings)])]});
       }
       need(hash(representedOrdinals)===hash(ownChunks.map(c=>c.ordinal)),'HYBRID_CHUNK_WINDOW_COVERAGE_INVALID');

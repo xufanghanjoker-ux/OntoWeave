@@ -1,0 +1,1035 @@
+{
+  "contract": "ontoweave-workbench-source-lock/1",
+  "baseline_id": "ontoweave-workbench-0.2.0-alpha.1",
+  "verified_source_successor_sha256": "23c987b48ce870c49375588ccaee4551f0dea2aa9ac918e7b4a229d6012c0b14",
+  "files": [
+    {
+      "path": "Cargo.lock",
+      "sha256": "86002ea4d3af63abfa8d5d7c31f6cd33958aa8b349bfc1bcc9d02a56040e3457"
+    },
+    {
+      "path": "Cargo.toml",
+      "sha256": "78dc575491fecd7439401a7145dd44f23c7d033d8a7a480cd4a6655499f2274d"
+    },
+    {
+      "path": "contracts/workbench-runtime-v1/codex-protocol.json",
+      "sha256": "123090ff48f0974be9e765ae0eb9f54531fc8595375e45c28ca17c1edb4792df"
+    },
+    {
+      "path": "contracts/workbench-runtime-v1/provider-material.json",
+      "sha256": "8307c47f7d20dc321f5bec14f67c1d774bfa3a0aa09ab032111864ec71adcc91"
+    },
+    {
+      "path": "crates/lightog-core/Cargo.toml",
+      "sha256": "5edee082163ab03ef03a919922a1afe06aa1609a889dc4a0a88774ff5174975d"
+    },
+    {
+      "path": "crates/lightog-core/src/adopted_context.rs",
+      "sha256": "3dc18fdf37db5dcaf6469b30be4cf8f2409bf9fa0c16d14cce98138fb1378d08"
+    },
+    {
+      "path": "crates/lightog-core/src/answer.rs",
+      "sha256": "8c8b33fcfe0f0511e3de9c3c25a5cf09646e4f8686cbbb3acdb0738da49fc86f"
+    },
+    {
+      "path": "crates/lightog-core/src/candidate_recovery_v1.rs",
+      "sha256": "25c7cd1f3ee1afac0e279e5f24124f52e96e23d1ccbde461a7081454b5b32418"
+    },
+    {
+      "path": "crates/lightog-core/src/candidate_staging_v1.rs",
+      "sha256": "8f5a43c8e12bdc1f46fc56cc0fbadc5c503929e0fe7c683dde72f7dc57247767"
+    },
+    {
+      "path": "crates/lightog-core/src/capability.rs",
+      "sha256": "ad014e65096c1b1b2412980ab22034e47a01cb7a6e56686952a267ee596b9f01"
+    },
+    {
+      "path": "crates/lightog-core/src/common.rs",
+      "sha256": "e41e5b7578a8c514aca9e45d0e2ddfcd55990063444c921ecf851d24c617308d"
+    },
+    {
+      "path": "crates/lightog-core/src/cq_compiler.rs",
+      "sha256": "a07c19bd9253d3cc2a51c12e182196878381bf627e818fae630ec9e331eaebad"
+    },
+    {
+      "path": "crates/lightog-core/src/demand.rs",
+      "sha256": "972e88280a27ba7cbc2a279e7d51db2aa78920eefdca7e319787dc5243dc7f3f"
+    },
+    {
+      "path": "crates/lightog-core/src/document_family_normalize_v1.rs",
+      "sha256": "4121c3f454b1a7420e846ff061ba3a60a1d7c702c08e8907b71840bc964cf221"
+    },
+    {
+      "path": "crates/lightog-core/src/document_family_route_v1.rs",
+      "sha256": "25280da1cd602bc8004463b88be3f87f032c16e1aa10210d20ebbfdc5f49e3cd"
+    },
+    {
+      "path": "crates/lightog-core/src/document_scope_coverage_v1.rs",
+      "sha256": "8e867fda0d661acb49d9bb1221f243120674fd674fc8d19d307ae8efc45dc65e"
+    },
+    {
+      "path": "crates/lightog-core/src/document_scope_v1.rs",
+      "sha256": "e93be3e3ed8b9ef2de8e00ae5429c526d8faa801614b484d3d841c71553d7b04"
+    },
+    {
+      "path": "crates/lightog-core/src/evidence.rs",
+      "sha256": "e5a3a5cc8bcbf9d5f2fa93f8b3a59f6f37d861566a3a448ec439c9c17b0c0e5c"
+    },
+    {
+      "path": "crates/lightog-core/src/evidence_routing.rs",
+      "sha256": "1d7397e6d9b91bc9b832335e035f85799a5b6ead0e5fa3cf5d6e3a3072fb6fff"
+    },
+    {
+      "path": "crates/lightog-core/src/extraction_menu.rs",
+      "sha256": "fe5c6e416441b7188d0c2db66e291c97a3a35d55db070d3d0e618dd9fd27af42"
+    },
+    {
+      "path": "crates/lightog-core/src/fine_source_evidence.rs",
+      "sha256": "2c9e5ede3f131a8742712ecd54061cb5a47d458af00ceb108aa0bdc2eb8cae41"
+    },
+    {
+      "path": "crates/lightog-core/src/governance.rs",
+      "sha256": "cee31fe218facb0540ebd1dcdbe33303231674d710a988ce3f0fc03b3651ea43"
+    },
+    {
+      "path": "crates/lightog-core/src/hybrid_retrieval.rs",
+      "sha256": "659bc5144b95bbbd0653b3e27b018d30d0024872f0e534d2117aa72c1a02afc9"
+    },
+    {
+      "path": "crates/lightog-core/src/incremental_graph_v1.rs",
+      "sha256": "2b42b0fa95daf988df2494927d443ec48bb783b580b87f4926369f0dcafaeb0a"
+    },
+    {
+      "path": "crates/lightog-core/src/knowledge_build.rs",
+      "sha256": "a60e41a1fbf0f9f666c544520c8b14ca05204a4b08ab7dde6821066e6265b84f"
+    },
+    {
+      "path": "crates/lightog-core/src/learning.rs",
+      "sha256": "72d778dda80148bde7eb8b21f4a1ba2f6082a9f3410fd902e2c0181162116d85"
+    },
+    {
+      "path": "crates/lightog-core/src/lib.rs",
+      "sha256": "0f80829fa2351f3baf720f54e635f94d0b8556914ed34dcc3324bfc88365b95a"
+    },
+    {
+      "path": "crates/lightog-core/src/main.rs",
+      "sha256": "fc6800f6ac3a04826125011c9f25f77ae9eef74bd0389e18357d89a19dc9eb69"
+    },
+    {
+      "path": "crates/lightog-core/src/model.rs",
+      "sha256": "e80342d501e8fde6b43b3e7f53f2d6403fab6b52d8ee48880337cd8b6b62f1d3"
+    },
+    {
+      "path": "crates/lightog-core/src/model_json_boundary.rs",
+      "sha256": "25d6070d05355dfb1b3e5f2442475453caf388a6d913f5509bf95610f9881bbe"
+    },
+    {
+      "path": "crates/lightog-core/src/native_query_compute_v1.rs",
+      "sha256": "b68275660861c996abf9a9f4365c710f043fe0784ccd515a3b5c2b2640e01b11"
+    },
+    {
+      "path": "crates/lightog-core/src/native_query_graph_v1.rs",
+      "sha256": "b908c0119420f1e25df08b09ee1c132776bba23a6ef2295867e65d72de1a3efa"
+    },
+    {
+      "path": "crates/lightog-core/src/native_query_math_v1.rs",
+      "sha256": "9f0ad4a28ca48b287c4a125da1a1eec59bdd58427053ea60b95899b3c63d6040"
+    },
+    {
+      "path": "crates/lightog-core/src/native_query_search_v1.rs",
+      "sha256": "2eee1c43f3cfc83bc4a46dabc26688699c0100c897a2d174ee450655a8ddb59c"
+    },
+    {
+      "path": "crates/lightog-core/src/native_query_unicode_v1.rs",
+      "sha256": "48962450f3f1da312fe5d6228018c796ec69a03d231a7b4a67a767a907d6c076"
+    },
+    {
+      "path": "crates/lightog-core/src/native_query_v1.rs",
+      "sha256": "a4cba8115190dd6ffe63a68e6c98c002c40dbfd7549d477cfaf047ba2ce83cd2"
+    },
+    {
+      "path": "crates/lightog-core/src/p5_learning_store.rs",
+      "sha256": "2f106b87fc47f97ec3a682ab8e67ed8d4b1f33ad9954b3b68dbd708d10a95151"
+    },
+    {
+      "path": "crates/lightog-core/src/provider_schema_v1.rs",
+      "sha256": "75be29babbc3ac70acccc842af8e355d1751fbf05d0b8e439861fd440b16008a"
+    },
+    {
+      "path": "crates/lightog-core/src/retrieval.rs",
+      "sha256": "16fbc403b6b2223b5690731b9f22df363b6a89fd33f3c9db1489ddf6be5cfc5a"
+    },
+    {
+      "path": "crates/lightog-core/src/review.rs",
+      "sha256": "cd0d63030f82742f083b399b1f010492b66d25fa0e94a25d3573a169f5e20ae2"
+    },
+    {
+      "path": "crates/lightog-core/src/rpc.rs",
+      "sha256": "a0c836049add59414ca3ff8e851187db5647552e6613885b3da828cf167f31e8"
+    },
+    {
+      "path": "crates/lightog-core/src/seed_materialize.rs",
+      "sha256": "158e5bc1fef451c76390e7fce2b3439ad5bf1e83924134a84ba7bf4fa5c50716"
+    },
+    {
+      "path": "crates/lightog-core/src/semantic_review.rs",
+      "sha256": "a7d30d0e96835ba40c7e99fb358b6bb97af766219bc342a40e03f4853b5a7db0"
+    },
+    {
+      "path": "crates/lightog-core/src/semantic_review_v2.rs",
+      "sha256": "100e109eb2aca401edfc5b3ab307642783a72c9ab835aaecbbda8573e0fc3c23"
+    },
+    {
+      "path": "crates/lightog-core/src/semantic_review_v3.rs",
+      "sha256": "e6e954e6862552a865fdc9c295945e3460ac480e2aba7c4e4a60b877b635fc38"
+    },
+    {
+      "path": "crates/lightog-core/src/semantic_review_v4.rs",
+      "sha256": "c0458cc76829a9aaaaf66a14e9c8b8c7878280eb135bc43c487d82f710923964"
+    },
+    {
+      "path": "crates/lightog-core/src/source_answer.rs",
+      "sha256": "d473ca921c92cced3cf09da64d9eb53748e03267c36ccff58f9953c111ad1592"
+    },
+    {
+      "path": "crates/lightog-core/src/source_answer_budget_v1.rs",
+      "sha256": "f5c678003a2cb8ad44ba79f065b867c3026f6b30607fbc0416f31c00635d8b43"
+    },
+    {
+      "path": "crates/lightog-core/src/source_correction_v1.rs",
+      "sha256": "98729c374ba362f45a7cbe920099c11608df42a7aec1b8a799fd343b4678d891"
+    },
+    {
+      "path": "crates/lightog-core/src/source_execution_v1.rs",
+      "sha256": "1fc4a86e35c45e9db54b37c8cca52d5afb32454d98e1f19cc5da738b6f72bba3"
+    },
+    {
+      "path": "crates/lightog-core/src/source_gap_state.rs",
+      "sha256": "cb04ad7bd9a95f9d74a52e4e741806dc697e96806eae53cbc8f7fbb8527195d3"
+    },
+    {
+      "path": "crates/lightog-core/src/source_gap_state_v2.rs",
+      "sha256": "7608854a4b9df7942ccd9c6de9e5341ed1967a9bdb296851b16f5a1fd5c392ef"
+    },
+    {
+      "path": "crates/lightog-core/src/source_gap_state_v3.rs",
+      "sha256": "3b53d49c87dd1cc7b33305f0bc0de5ba4893fb7ce73c5880f92af3c6982627e2"
+    },
+    {
+      "path": "crates/lightog-core/src/source_human_review_v1.rs",
+      "sha256": "7639f0bcb08a9f1f71d693b578950ce11e992c0cb06769c4c9fbeb355583acae"
+    },
+    {
+      "path": "crates/lightog-core/src/source_learning_v1.rs",
+      "sha256": "e07ffc6de63d9b3928feca8c201d4a20152cad987c2fff56a539feee6b906db5"
+    },
+    {
+      "path": "crates/lightog-core/src/source_proposal_replay_v1.rs",
+      "sha256": "311a39d99ce57fe9cbbf75fd500ea69ff1a3c63092eac83c389504b965023574"
+    },
+    {
+      "path": "crates/lightog-core/src/source_support_gap.rs",
+      "sha256": "adb3c6a1154c209afeaed506bf6e04aeb56cd860c80208aaef3a7bf4ce582a20"
+    },
+    {
+      "path": "crates/lightog-core/src/source_support_gap_v2.rs",
+      "sha256": "2430e4fce7712ebae456f6f9dc20ed7661ef424b5fe2ae96d2d05159c7cf3fc4"
+    },
+    {
+      "path": "crates/lightog-core/src/structure.rs",
+      "sha256": "827c6bb6ff3b2388d5319205c38cc2378108f6b3bbd54d5c1e63047c1500da8a"
+    },
+    {
+      "path": "crates/lightog-core/src/support_selection.rs",
+      "sha256": "25de1ac6a44b97413d95aab271db71f6b150d4ac1961a57ed3a162fd053d731d"
+    },
+    {
+      "path": "crates/lightog-core/src/temporal_core_v1.rs",
+      "sha256": "f324d76a7f8e6cde5c8081a8661525fb5b194385f59d5f65b74493efcd0cc53f"
+    },
+    {
+      "path": "crates/lightog-demand/Cargo.toml",
+      "sha256": "d4ef11ff684e6f1c84c4512a2a93b36dc25545fe438e46667cceedc040b021ca"
+    },
+    {
+      "path": "crates/lightog-demand/src/bin/lightog-production-demand.rs",
+      "sha256": "adb065ca4913ff1438310e191c6b94aefc6deef98a774e81ebdd68653f67d7a1"
+    },
+    {
+      "path": "crates/lightog-demand/src/context.rs",
+      "sha256": "2b16db2559e9a22eb1db0717b28d679314c001c568af2a222d4fe13ca2138f5b"
+    },
+    {
+      "path": "crates/lightog-demand/src/evidence_bridge.rs",
+      "sha256": "04859e3c7a143e1d3b6c98638b5c96e30ae3c0c9ee9567ae3b2d9c6e9894ec3e"
+    },
+    {
+      "path": "crates/lightog-demand/src/knowledge_contract.rs",
+      "sha256": "9431e00a1f5a7ec8ab88e9e0f04add3670380f72dc06412c155810b067178eb7"
+    },
+    {
+      "path": "crates/lightog-demand/src/learning_contract.rs",
+      "sha256": "5fe2de7a9030c66adbe084ac0e4d5bd95a404f70e4418d6b90181991013378a9"
+    },
+    {
+      "path": "crates/lightog-demand/src/lib.rs",
+      "sha256": "d6aeca62525157671d906ac3956ed540dd35a13a215f0916d62e24d1cdfcd82f"
+    },
+    {
+      "path": "crates/lightog-demand/src/literals.rs",
+      "sha256": "028b18c2ab0bbe8381c9158657c690fb928cd47675c1decc4eaf53cbe5377633"
+    },
+    {
+      "path": "crates/lightog-demand/src/main.rs",
+      "sha256": "b857b0d560525bf0b500741e940e472a981b927875e6f03a4e2479dd7831d4dc"
+    },
+    {
+      "path": "crates/lightog-demand/src/production.rs",
+      "sha256": "9a7797ebc20d22c98c4fe022c8de4ee272c9a98b076d612f347c9955f79b1d93"
+    },
+    {
+      "path": "crates/lightog-demand/src/question.rs",
+      "sha256": "e24a662d836107da4de1488c7c891de8632a9d7b45be3e92b3799c22c2eeeca6"
+    },
+    {
+      "path": "crates/lightog-demand/src/types.rs",
+      "sha256": "f7659808928ff1a497cdf9aba771674b9bb799a2c4647afe5d9dc5c907211097"
+    },
+    {
+      "path": "crates/lightog-demand/src/validate.rs",
+      "sha256": "28dbeee1fddb2f084c009539b9dfa540c9cd005d1074619c6db6ffe010d4e117"
+    },
+    {
+      "path": "crates/lightog-demand/src/wire.rs",
+      "sha256": "3ca8c3ed350c45a56661d5abec826aed7215ca4cadda8dd7a78fb50b1bd2fb07"
+    },
+    {
+      "path": "crates/lightog-retrieval/Cargo.toml",
+      "sha256": "361bd5f97757af13d0860a3b53d5c2fc37256182c09d9544727e18962e92a0ab"
+    },
+    {
+      "path": "crates/lightog-retrieval/src/bin/lightog-context.rs",
+      "sha256": "a9c66cf544bec8fcb6b1e384b3f8bc35b432546af6fa6685a6c36464d2cbb3af"
+    },
+    {
+      "path": "crates/lightog-retrieval/src/bin/lightog-evidence-units.rs",
+      "sha256": "e8e737ba1db05d6cff4b192f9ab7dea48cbb2184e6620b760ece68b732767217"
+    },
+    {
+      "path": "crates/lightog-retrieval/src/bin/lightog-evidence-v2.rs",
+      "sha256": "c795c6bd3e65a47f8120b9663ca3fdcefad22fd2d4974ea472b34c1a3ed98932"
+    },
+    {
+      "path": "crates/lightog-retrieval/src/bin/lightog-evidence.rs",
+      "sha256": "3540ba7ab68635e01f376467024a3c2ffbd8202b16a047ea762df2d565bfcbe1"
+    },
+    {
+      "path": "crates/lightog-retrieval/src/bin/lightog-rank.rs",
+      "sha256": "aaa307027796475e9b00a5480890809380bd371a0d8465401a2514594224efb3"
+    },
+    {
+      "path": "crates/lightog-retrieval/src/evidence.rs",
+      "sha256": "63debd98eaea86af5c37d66054a172eb989364fd8d0394aa00882ba41ed998a6"
+    },
+    {
+      "path": "crates/lightog-retrieval/src/evidence_units.rs",
+      "sha256": "940172e5bec505901566620c670fb893a2018e1a63bbadfcdba5b9921e79abc1"
+    },
+    {
+      "path": "crates/lightog-retrieval/src/evidence_v2.rs",
+      "sha256": "10e24772ab4b46900cb6fc008e8b083d82bb0d83e7c70796a3d533c162d02c7f"
+    },
+    {
+      "path": "crates/lightog-retrieval/src/fragments.rs",
+      "sha256": "90c16d7b8eb109e907fbf5c51331f7a0e64a736ddeac15f7a50134341add8c07"
+    },
+    {
+      "path": "crates/lightog-retrieval/src/lib.rs",
+      "sha256": "b4433a26bd19b658d6cc270ac961f3b25a1a4b60736c961996fff9b9e707108e"
+    },
+    {
+      "path": "crates/lightog-retrieval/src/main.rs",
+      "sha256": "d5bd347cd8017879178ee28a78ab85c65b1385addc0e83590d0205fd1f7b3819"
+    },
+    {
+      "path": "crates/lightog-retrieval/src/ranking.rs",
+      "sha256": "9a2ae277e8bc8f6e272807a18284987056bb809fafa63684adbea1780d935925"
+    },
+    {
+      "path": "docs/skill-drafts/lightog-cq-discovery-product-v1/SKILL.md",
+      "sha256": "e0d7944a5431101bb375be206e009780dfdaecc14a3b069b74f7c26735c66613"
+    },
+    {
+      "path": "docs/skill-drafts/lightog-retrieval-answer/SKILL.md",
+      "sha256": "0b827937b9e8078703f7caa6c65edc78654546355a556a14cddd31fb6c6b3682"
+    },
+    {
+      "path": "docs/skill-drafts/ontoweave-entity-resolution-v1/SKILL.md",
+      "sha256": "826fa363bdd91f8830dac1468a732e8c72515aaa19091c5433498ea9d9c02e11"
+    },
+    {
+      "path": "docs/skill-drafts/ontoweave-ontology-alignment-v1/SKILL.md",
+      "sha256": "c5978524cba7146091e6b83e8bf49e7932eac5be379ecc60a6b390379322f830"
+    },
+    {
+      "path": "docs/skill-drafts/ontoweave-ontology-alignment-v2/SKILL.md",
+      "sha256": "a4c505ca6be0fee71384a4dbe9037ef8684a334db09aca4f034fa6ccad9e6031"
+    },
+    {
+      "path": "docs/skill-drafts/ontoweave-semantic-extraction-v2/SKILL.md",
+      "sha256": "a4c6785002a77c600472a387f52cb81ae2b5089ff1814125fe54718ae6f3cada"
+    },
+    {
+      "path": "migrations/001-pg-cq.sql",
+      "sha256": "eaa727f18a2cbd19b76f75a396b718090d06e3758b3c0e3b6b4a728d2bbcce2b"
+    },
+    {
+      "path": "migrations/002-cq-similarity.sql",
+      "sha256": "4a89a5a19a7c0fdce06ebbc82d0c477aedf7d6fb096458ecde0f0d2faa11406e"
+    },
+    {
+      "path": "migrations/003-front-half-run.sql",
+      "sha256": "73d82ac6e33ab589de9e1ba29431154936b0d3e0eba88326cd2c28399f5f3e36"
+    },
+    {
+      "path": "migrations/012-retrieval-index-v1.sql",
+      "sha256": "8cfa4970d04bde96367066419dac2b0f6768a5bc3319d0b4f1c71aac91bb3db1"
+    },
+    {
+      "path": "migrations/013-product-library-registry-v1.sql",
+      "sha256": "d989184da172e5025badd36791a27098ffaa2a8960fcc9e3ee1314ddd4821524"
+    },
+    {
+      "path": "migrations/014-product-workspace-lifecycle-v1.sql",
+      "sha256": "abcd9412ab053d7d4a433eb8424a31d4667dfe3d7684c424728b9763f97c50f3"
+    },
+    {
+      "path": "migrations/015-product-source-snapshots-v1.sql",
+      "sha256": "cc7a3182798c6f5cb00c32e3b3116fb41979ba1da5ff8b88456a655fec7d07e2"
+    },
+    {
+      "path": "migrations/016-product-identity-source-scope-v1.sql",
+      "sha256": "ba55698bb8d01101b32215c8440787627096e0c8e30f996067004feece93e08a"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "a5ebe28efe73262788f62f3569bcfcf9ea4e880322f842648065a6574c48f15e"
+    },
+    {
+      "path": "package.json",
+      "sha256": "1007d1ade8bfbf1771dcb340fd285b1e2a9a99bda3cf6b2e5bbbad79c228789c"
+    },
+    {
+      "path": "python/ontoweave_api/app.py",
+      "sha256": "79a71563538edd930a319ff6d8d22cabeb1d0a8c5be1056c54c0f4ae11caaf92"
+    },
+    {
+      "path": "python/ontoweave_api/contracts.py",
+      "sha256": "8516c6634354f1993b88fa8a64fdce83103caf8ab1741ea75439bc7003ff35af"
+    },
+    {
+      "path": "python/ontoweave_api/directory.py",
+      "sha256": "1eabf3dfd06e3f22804e727d6813b820a44887565b18c854de068efacf765f20"
+    },
+    {
+      "path": "python/ontoweave_api/requirements.lock",
+      "sha256": "850ee8875e45915ad37a9bc94a5359ab726e8825d3be9c0dbf73c604ab749029"
+    },
+    {
+      "path": "python/ontoweave_cq/__init__.py",
+      "sha256": "14653fe1490df22e97b42273c90e57ff9b645c17145d6bf8549afa62009e41c4"
+    },
+    {
+      "path": "python/ontoweave_cq/cli.py",
+      "sha256": "40b92ae99f994b61b70e175ca94dd4cabe72bebd9088169812cf572702188230"
+    },
+    {
+      "path": "python/ontoweave_cq/store.py",
+      "sha256": "4a4f1838da3e51c15bff06576aa5a15757ff8bb49a47084364b69c856163849f"
+    },
+    {
+      "path": "python/ontoweave_cq5000/__init__.py",
+      "sha256": "3e662680e26da36f3a7ace55976f484d1be029b15ecb00f5cbee48a0114219d3"
+    },
+    {
+      "path": "python/ontoweave_cq5000/compat.py",
+      "sha256": "34d70578a92487909323c348ad998ec2250c8a0466658ab1bbab34d1765a734b"
+    },
+    {
+      "path": "python/ontoweave_cq5000/dispatch.py",
+      "sha256": "6dbcc62bedc5bc8e9f2e7293e8e4e32469e3c436723c714f12b48702a591bdc4"
+    },
+    {
+      "path": "python/ontoweave_cq5000/errors.py",
+      "sha256": "2332fb8d3fe7ec9e136cd0ef47d4ef726ccd213feefd231b31429c312dcaaa04"
+    },
+    {
+      "path": "python/ontoweave_cq5000/lifecycle.py",
+      "sha256": "4651c650f4a91a90d253301755289504d57f3aee07bb1a58cbd5388837fccb2d"
+    },
+    {
+      "path": "python/ontoweave_cq5000/pg_contract.py",
+      "sha256": "eb6f80de9ee8859e695a7d89c45612bf92b0c1dc76beb27508d85ce7f8ebef04"
+    },
+    {
+      "path": "python/ontoweave_cq5000/pipeline.py",
+      "sha256": "a44e1ecc4e3d86ab12ed76f34774fcb857e291ee3a86d74f47a086d2fbec88ab"
+    },
+    {
+      "path": "python/ontoweave_cq5000/ranges.py",
+      "sha256": "74b113332eb2e5653d44b0e83b32ca664e5fa8cfd78cfd1919887a2b11291def"
+    },
+    {
+      "path": "python/ontoweave_cq5000/receiver.py",
+      "sha256": "4c61c4afece875715b2bdab7d77cf8f1b09a9f5210cce3109e10e2d0001b27a2"
+    },
+    {
+      "path": "python/ontoweave_cq5000/replay.py",
+      "sha256": "10a805d45ea621478982eeed38454de4aa481225f283e7e1a5ae90d0c61c4b3f"
+    },
+    {
+      "path": "python/ontoweave_cq5000/repository.py",
+      "sha256": "55742dd2336d2ad6d1dc6045762d831a42a9b45986b8f48f37d9144aca1707ff"
+    },
+    {
+      "path": "python/ontoweave_cq5000/run.py",
+      "sha256": "9c370fdbae9f47239bac3ee8dbb60d216bab7993019e37094cc21cf46d336be5"
+    },
+    {
+      "path": "python/ontoweave_cq_similarity/__init__.py",
+      "sha256": "68fe7df870bae44927940a5f6919987b55cb57e8144896cd6679eee12ced7a8d"
+    },
+    {
+      "path": "python/ontoweave_cq_similarity/adapter.py",
+      "sha256": "b22d3ab00a90408fc84bcd80735c99abe527b5ba9a2e424b52fae40e7bf9f3d0"
+    },
+    {
+      "path": "python/ontoweave_cq_similarity/core.py",
+      "sha256": "379e4516e52fd9a66d55ec4dc235f37d75bf075d344f538ca346167392d595af"
+    },
+    {
+      "path": "python/ontoweave_cq_similarity/embedding.py",
+      "sha256": "ae458fb3399799d48d0dedff7946fe0e8825c55eda5c436dcb8385bfa75e2f34"
+    },
+    {
+      "path": "python/ontoweave_cq_similarity/repository.py",
+      "sha256": "effc609ad35c69bef043880f8363df8fb206f6f480f5ad77aa203daedce32954"
+    },
+    {
+      "path": "python/ontoweave_facts/input.py",
+      "sha256": "dc85852b5578cd01f29dfdda75a93eb781e4187abbc84d7543065408c5b54cf0"
+    },
+    {
+      "path": "python/ontoweave_facts/local.py",
+      "sha256": "5c3f1ee7bfb32a1a97431ffe2d47c5ff0e8e99c795535e450ef87f997d776476"
+    },
+    {
+      "path": "python/ontoweave_facts/normalization.py",
+      "sha256": "a066d0eaad76c0b2c4fb7c466824ad97643885706f2845a36d548e9bcc4f6398"
+    },
+    {
+      "path": "python/ontoweave_facts/preview.py",
+      "sha256": "74b829c93082f581e0ee70dff0109c978e15dd7dea54e4930ca2f960a60d5bc5"
+    },
+    {
+      "path": "python/ontoweave_facts/routing.py",
+      "sha256": "4ca41c7312c6db3a83929cc7bb6768832b4d39dd6b7961422aed41f50eb7ce87"
+    },
+    {
+      "path": "python/ontoweave_front_half/__init__.py",
+      "sha256": "88c42fdf7d89f36ebff580bb1dade696c181504af7c5649d9f6c34c0c8773783"
+    },
+    {
+      "path": "python/ontoweave_front_half/baselines.py",
+      "sha256": "e26407abd494282ceb99f40e4d9f84c4b5538537f45fb668d582d5b177394351"
+    },
+    {
+      "path": "python/ontoweave_front_half/native-rpc-request.mjs",
+      "sha256": "10c904524687fd07d2ad8ff3c21af5f66d4b3d8a9a18f0c9186ada809b0d9c06"
+    },
+    {
+      "path": "python/ontoweave_front_half/native-rpc-worker.mjs",
+      "sha256": "7f5f8a67ced3488e0369247c661617786ef72b6299b2513212c6a9947f13d6d7"
+    },
+    {
+      "path": "python/ontoweave_front_half/native-rpc.mjs",
+      "sha256": "27115cbafbb7369bd7a6d88613648e3aa1cb0458fad8e917b856d072e8acc187"
+    },
+    {
+      "path": "python/ontoweave_front_half/native-sim-provider.mjs",
+      "sha256": "485927a91426fc47fc8b26e340947af9e116fed5751cfd65e265b732bb8dbe6e"
+    },
+    {
+      "path": "python/ontoweave_front_half/native.mjs",
+      "sha256": "a0f8e0736ce6614a3ebefaeea45f7c06f31039c267ce84d0b741ca676eb79c12"
+    },
+    {
+      "path": "python/ontoweave_front_half/native.py",
+      "sha256": "2ce898f8394e6089969c4083438f645aa9a4525e0e1b7163a00213d7231af84e"
+    },
+    {
+      "path": "python/ontoweave_front_half/native_rpc.py",
+      "sha256": "8bd9c762781c373a97b6d33cefac7f8543aad8beb63389e4841e1141e78a1387"
+    },
+    {
+      "path": "python/ontoweave_front_half/parse.py",
+      "sha256": "31819adb080d0e1ef575d273edb8f68bd12945aee60c178c33264fd75ea1e964"
+    },
+    {
+      "path": "python/ontoweave_front_half/pipeline.py",
+      "sha256": "378d6a1e7bacfecd889987084113cb8715957e06587a31a714901ed3f714cfa8"
+    },
+    {
+      "path": "python/ontoweave_front_half/records.py",
+      "sha256": "01ddbdc6122346573881060c345c525b04c1316acb16326fa63b35ad9d7a7e4f"
+    },
+    {
+      "path": "python/ontoweave_front_half/tool_execution.py",
+      "sha256": "c895b42271bea58dd5489b3dcea62dd2a931b4eb45c9184fb65bc743ff4081ae"
+    },
+    {
+      "path": "python/ontoweave_identity/adoption.py",
+      "sha256": "2941f93de8aeed90c1a3b60cc84f8a766c0f0fefb5d02c99af15b032b5720be0"
+    },
+    {
+      "path": "python/ontoweave_identity/agent.py",
+      "sha256": "215fcc866c4b4a08c47cf0ef1245efaadbb7124709cc75765993cc37b9fd96a0"
+    },
+    {
+      "path": "python/ontoweave_identity/compound_decisions.py",
+      "sha256": "c8889da643db732f5d705b40672dbf891f53e58ae6eb22a2345fa951c13d42f7"
+    },
+    {
+      "path": "python/ontoweave_identity/input.py",
+      "sha256": "f0e2f4f812c251c7ffc7f5c07cbc5fdd0ccb335eb1e35f3f0a8fa411180c9ca7"
+    },
+    {
+      "path": "python/ontoweave_identity/judgment_cache.py",
+      "sha256": "a2e43f29fd9b6bd1d394cee810389164eae1e2aab4ea0fea23d90063f3db3ee7"
+    },
+    {
+      "path": "python/ontoweave_identity/matching.py",
+      "sha256": "cbedb455bf74e0ac8edd0d498c6b956e52c316813027e3dfa3a5594499736050"
+    },
+    {
+      "path": "python/ontoweave_identity/native-runtime.mjs",
+      "sha256": "5c7035f50e8f6bf717926fefdfaf49a3a1454e4836ef430f30a64b517ea092b8"
+    },
+    {
+      "path": "python/ontoweave_identity/native.mjs",
+      "sha256": "73eb380723ab28d2d749f0ba0b98f550f9bbb3c5625f044822cac03bae32da7c"
+    },
+    {
+      "path": "python/ontoweave_identity/native.py",
+      "sha256": "2612e96fd66830fe02151edb55d49d58edc356f80293ee473e941a644add0769"
+    },
+    {
+      "path": "python/ontoweave_identity/publication.py",
+      "sha256": "3bb05796a4d67ec909a34ea5fa0d99b8190f699af7060b448f29ef25f2843494"
+    },
+    {
+      "path": "python/ontoweave_identity/service.py",
+      "sha256": "998bb5ad501f60d945ad40b41725e510c25c02343583c440adf5998ca01fe28e"
+    },
+    {
+      "path": "python/ontoweave_identity/source.py",
+      "sha256": "c469c260ae3003dc821e44e74f47f221c106615d1f0bb48311588a2215392b28"
+    },
+    {
+      "path": "python/ontoweave_identity/storage.py",
+      "sha256": "222c67d34d9dccc03df034eaa6a2e2fcf877e3693aa5b3ab1660855fdd72921b"
+    },
+    {
+      "path": "python/ontoweave_index/__init__.py",
+      "sha256": "94f817957b0bb98038afd6702039abdbeb3facb50cb8d6d1231560d010bd6071"
+    },
+    {
+      "path": "python/ontoweave_index/__main__.py",
+      "sha256": "5353167ec0f2e23c1d74d312a0fca745fa94a1ae3284a57e85754a2b2bb4ac3c"
+    },
+    {
+      "path": "python/ontoweave_index/embedding.py",
+      "sha256": "27720af30c1d2ac5fd31daa789b0ef3c1d6df4c2075222bf35c02e24db62b929"
+    },
+    {
+      "path": "python/ontoweave_index/material.py",
+      "sha256": "4b0533f6af5abf82f879e851281d762b5c0bd8b9bc2b65e3ac65fa59af5e8667"
+    },
+    {
+      "path": "python/ontoweave_index/publication.py",
+      "sha256": "7305b237075a617bcebd35d9b2cef49bb865cc40fbf4dd8c0fc01fe230f8312b"
+    },
+    {
+      "path": "python/ontoweave_index/readers.py",
+      "sha256": "9ae2373742d211d63478d20bf40106bc539c70f7d0b0cd2ab7c03524926664f0"
+    },
+    {
+      "path": "python/ontoweave_index/repository.py",
+      "sha256": "8a023c1ccf8c06d66ab79a296514676d588c2f8800c27c3c285e4ab07d9315a2"
+    },
+    {
+      "path": "python/ontoweave_index/reranker.py",
+      "sha256": "a467b8cd7491724af3911b3f3dbd0829a0fefd3bab01f35ac5cee9048419c8d4"
+    },
+    {
+      "path": "python/ontoweave_index/response_evidence.py",
+      "sha256": "487ab26dd4607ed32d66e97a04e5e27b4c6e11c059f16e52743bc6bb82ba0d13"
+    },
+    {
+      "path": "python/ontoweave_index/settings.py",
+      "sha256": "9987f009e889ee523a5523aac34227fc433084fbc49e60a1f2fc4aa33f6fa808"
+    },
+    {
+      "path": "python/ontoweave_index/sources.py",
+      "sha256": "aa685977ebc4d2edc3962c0f88c514d0f79c806ff7b9ff3d7d16c939d9fdfa45"
+    },
+    {
+      "path": "python/ontoweave_ontology/agent.py",
+      "sha256": "d0d1fbabb77772dd2baad45ab644d3b908cc1e5d657327696e1c9c92a8603f73"
+    },
+    {
+      "path": "python/ontoweave_ontology/candidates.py",
+      "sha256": "7c23aeb81e2b4dd0558426084fc2f834769d71006f1c4fe315644ef384d5812d"
+    },
+    {
+      "path": "python/ontoweave_ontology/material_context.py",
+      "sha256": "0185a8cd87e1bf04d45b8ac81661612bc0ed5c4a824cb8d576ec6b3a0b2c8b3a"
+    },
+    {
+      "path": "python/ontoweave_ontology/native.mjs",
+      "sha256": "ae9c62ac5f1ccd04763ca5124b063784907562451d1db5eb6e0788830fdc3cf9"
+    },
+    {
+      "path": "python/ontoweave_ontology/native.py",
+      "sha256": "68a31194d17bfac2c552bdbf6d7a8c7b13eb333f6d494616c599d4178c9642d9"
+    },
+    {
+      "path": "python/ontoweave_ontology/receiver.py",
+      "sha256": "316cb518c390bca3e98a9d95aef9d098d03fe43399db304a11ba159df5c70d2d"
+    },
+    {
+      "path": "python/ontoweave_ontology/recovery.py",
+      "sha256": "21257d671beb6d546f0656eaec9faa44012c485c33c6738e9fe4a3d063a3fca3"
+    },
+    {
+      "path": "python/ontoweave_ontology/service.py",
+      "sha256": "7296f927cb7fd2b7fbc9a7d18933f5021aa9b8491fe2f6ab489f0280ba9e63b7"
+    },
+    {
+      "path": "python/ontoweave_ontology/signatures.py",
+      "sha256": "353b5af2128af03e84ab48dcf07c9861d9457d4639611033e7f0585d8c550f07"
+    },
+    {
+      "path": "python/ontoweave_product/builds.py",
+      "sha256": "0f0a220cabc44373b5e01450a16af97be2adb962b515992d6c95f7731473c6f1"
+    },
+    {
+      "path": "python/ontoweave_product/capabilities.py",
+      "sha256": "6b9b28b4520e5e1b29a1cfd45588dfefdcb1edbd831fd8842ea9baba7653f0ba"
+    },
+    {
+      "path": "python/ontoweave_product/documents.py",
+      "sha256": "0a60892186f7cffd5b2c20c1a5201e1fbdd4b7f0b8f7e08fe19691add1cc3a01"
+    },
+    {
+      "path": "python/ontoweave_product/models.py",
+      "sha256": "d760b1ec2d6b198ecd6e5737d3decaa21ac7d422c974462cef045e50dda16d16"
+    },
+    {
+      "path": "python/ontoweave_product/pipeline.py",
+      "sha256": "f4feec9d370cf3e98a0a33bc27e2308aa992e9503aadb611a83da13572071a19"
+    },
+    {
+      "path": "python/ontoweave_product/registry.py",
+      "sha256": "edb526b84440f037126390a2b77ffbc03b46609db0c2d6e1db720020c9d23664"
+    },
+    {
+      "path": "python/ontoweave_product/runtime.py",
+      "sha256": "60f2e5f1c43cfdc8ec566c90c5d301a86874540b7e9e93c8b879ff244b50780f"
+    },
+    {
+      "path": "python/ontoweave_publication/coordinator.py",
+      "sha256": "05d4f2fec1c05ef675474a6cc9a2da658a065ed46fea0501c4c992e10ceadc9a"
+    },
+    {
+      "path": "python/ontoweave_publication/decisions.py",
+      "sha256": "43cc69cda9b0c7bd1cf8d15cd5268bf87f40a59d509f69357dc1abc80b066145"
+    },
+    {
+      "path": "python/ontoweave_publication/integration.py",
+      "sha256": "d7e991b280aaa245f7b0c287f95ef74deb57598097f9750717052de80746531d"
+    },
+    {
+      "path": "python/ontoweave_publication/readers.py",
+      "sha256": "9a7cfe8604ac299e4cb51760b6d112a8e322c0ef936dfc47c6b04a955c002b00"
+    },
+    {
+      "path": "python/ontoweave_publication/runtime.py",
+      "sha256": "45a659fb899cc898a72de1244ec2dd12da3f98780a383a750ae85bce3728e682"
+    },
+    {
+      "path": "python/ontoweave_publication/store.py",
+      "sha256": "ed775acb248e2e4534ea52a5748062bc046a6f07b4fda557b922868fe9345035"
+    },
+    {
+      "path": "python/ontoweave_query/__init__.py",
+      "sha256": "7706fd97e5e5191136f74fe09a9e8a0992e7cfa2ced5d6df52c9dc97acc2e9cc"
+    },
+    {
+      "path": "python/ontoweave_query/kernel.py",
+      "sha256": "afd9e2be739ecb9983aeff4d091ab87511b9af449e62153272a46fbccf0bedba"
+    },
+    {
+      "path": "python/ontoweave_query/service.py",
+      "sha256": "0d9d4d4edde76f472039a72144abc190122b4b3b731dcf9bab37d4f88a3c8d3f"
+    },
+    {
+      "path": "python/ontoweave_query/tools.py",
+      "sha256": "64881d8f98f854cf292c08ef8f72e6a0efe070de256b58a4bb1293cf89382242"
+    },
+    {
+      "path": "python/ontoweave_retrieval_contracts/__init__.py",
+      "sha256": "7227e0f7c286f85cbbc1855130bd5a0895400fe7ba35914f06f4702885f721d2"
+    },
+    {
+      "path": "requirements-pg-cq.lock",
+      "sha256": "61cff68f3d8e36f212e18c130d7159218c4878d3735726ab2eaafec4d37ccd64"
+    },
+    {
+      "path": "rust-toolchain.toml",
+      "sha256": "ca67e66659a82661386e5a08471c913cb8b3f7c7ce37592207d3f513589a41c2"
+    },
+    {
+      "path": "scripts/pg-cq-legacy-hash.mjs",
+      "sha256": "2b852597ef66db1aa5a7436da04d3e1965d6ab29bc9808cf40d3f069c5b2c663"
+    },
+    {
+      "path": "scripts/setup-ontoweave-runtime.mjs",
+      "sha256": "1b912464ac20a2a7b37e542f88aae19a688c0051ea534176711250950ef63aa1"
+    },
+    {
+      "path": "scripts/start-ontoweave-api.py",
+      "sha256": "5b0a85fd84a1c962c8f6d448f645b8f1b78d84170bd0e7246a3b1e1a97c34b49"
+    },
+    {
+      "path": "scripts/start-ontoweave.mjs",
+      "sha256": "94be314d55d62f81c2d6254c3bb598703a55a2d461a6bbc919705d00e82462c3"
+    },
+    {
+      "path": "web/app.mjs",
+      "sha256": "95c8d860a498e4edbdaeb02faed7e3ef84c3c1998c8025902573c60a2de8cf35"
+    },
+    {
+      "path": "web/assets/graph-view.mjs",
+      "sha256": "b8cd16f6d6ea75d90afc7a1f86659e2ed5c453e5460b5ccdd4da02e29212abe0"
+    },
+    {
+      "path": "web/docling_hybrid_chunk_worker.py",
+      "sha256": "a5333c8f608acae8f8be5294c1deedc173b850be2f212b6312e5a7fa659c3a11"
+    },
+    {
+      "path": "web/docling_structure_blocks_v2.py",
+      "sha256": "9076cc5f566a468868faa3dfedd2eb72b5ee352dc323c3d4667f25f4f78af804"
+    },
+    {
+      "path": "web/docling_worker.py",
+      "sha256": "e467d80f1f28056d6c47c5a059bbba0f659d34d23d5be1106d21dce0f9645d03"
+    },
+    {
+      "path": "web/index.html",
+      "sha256": "80970c270d5e102f06c09ff8df601150369d07c500df1d4e78b6f639991ed3ad"
+    },
+    {
+      "path": "web/lightog-chat-client-v1.mjs",
+      "sha256": "e571ae9d11172fab7bc459b680d32a4231c852db46566a5295833a97c3feff2b"
+    },
+    {
+      "path": "web/lightog-chat-v1.css",
+      "sha256": "655b19b97198fbb0059e5a3b200b5e2d0882f8354d5da6d440cb8195ce473206"
+    },
+    {
+      "path": "web/lightog-chat-view-v1.mjs",
+      "sha256": "95e97ac1abc113c42d720d838a63077f15b160a4e3142c06136720ad104f2751"
+    },
+    {
+      "path": "web/lightog-chat-workspace-v1.mjs",
+      "sha256": "49a9f095c465f4c014606f9bd7e976b79f77e2d5395d9e1a3cccca6d6c74110d"
+    },
+    {
+      "path": "web/lightog-correction-view-v1.mjs",
+      "sha256": "273bda0c5a5f0d3fb11e4928247ee968ae732f3e8cda572a67b9765be986a3b6"
+    },
+    {
+      "path": "web/lightog-workspace-v1.css",
+      "sha256": "fb6794ac1cad548bcb3a05b41e30c10b9ac1ac641906556d654dd3ac84d05a29"
+    },
+    {
+      "path": "web/lightog-workspace-v1.mjs",
+      "sha256": "af2bf5595bea7072f7d22335aeb677e4e0a0f2e32c85a558fe6f65a587a2b873"
+    },
+    {
+      "path": "web/lightog-workspace-view-v1.mjs",
+      "sha256": "1d0060470cf60266951ad818fa3d0733de502c45cdd38d524b6cee342a37b85c"
+    },
+    {
+      "path": "web/manage.mjs",
+      "sha256": "e99d9f3f11ad1ab85b387ef1364f02040a764b326bac8b9c933ae47f29246104"
+    },
+    {
+      "path": "web/native-agent-material-view-v1.mjs",
+      "sha256": "862bc58033d96affadea6a72bd5f8bcdb6fe9e381a1c224d5d3ea1a752d36429"
+    },
+    {
+      "path": "web/native-agent-mcp-v1.mjs",
+      "sha256": "3b830b4894862c7fc2b9a86dd4c5a65b33acd1cd3be0df20ca1ab53963e2e95c"
+    },
+    {
+      "path": "web/native-agent-read-session-v1.mjs",
+      "sha256": "5912787add164a0b1e8a7e6478c061ba8b8c665a75544a9dde3ecb346789cbf4"
+    },
+    {
+      "path": "web/native-agent-references-v1.mjs",
+      "sha256": "9b964fd466b5a0a1f9beaa4c77e00312af20ee9a6c4046628b015aaf196af909"
+    },
+    {
+      "path": "web/native-agent-resources-v1.mjs",
+      "sha256": "ff81a961b81d3a7eb8309dc4e1955851510fb2de2384581255d32d3e75d2a8a3"
+    },
+    {
+      "path": "web/native-agent-runtime-v1.mjs",
+      "sha256": "50ce7f04d0b859b103da1b9c5f463d38541374c56de522b275ad8f5f783fe4ab"
+    },
+    {
+      "path": "web/native-agent-save-finish-v1.mjs",
+      "sha256": "a4ace0991881a52eddb3bc262647836970c6c3f28d424ce321d29d0fd2c60c5c"
+    },
+    {
+      "path": "web/native-event-journal-v2.mjs",
+      "sha256": "5f4dcec5e5f03846334d5fea5caca3963f45a343b92f40d91f6acfe477a56e4f"
+    },
+    {
+      "path": "web/native-observable-progress-v1.mjs",
+      "sha256": "4672cf43dd59022518f84e9b701d9679ecd34a12c10544b173b60452634917d7"
+    },
+    {
+      "path": "web/native-query-chat-v1.mjs",
+      "sha256": "5b6fa779500d4cffd1747540b4cafe3a82262b6d5de58f70e2d96840ccae4192"
+    },
+    {
+      "path": "web/native-query-http-v1.mjs",
+      "sha256": "c605cc0349664516f1665fabb61fadb91d1647ab41f556de4c159e4ecc7812b5"
+    },
+    {
+      "path": "web/native-query-model-v1.mjs",
+      "sha256": "21a6137d73a76128812299bc66377419dcfea40e2a55e0d983e440204bdc305f"
+    },
+    {
+      "path": "web/native-query-pg-v3.mjs",
+      "sha256": "d8f4eb083823dba2018cc4764fef525c6523a11d405839f1910eb77a26cf75af"
+    },
+    {
+      "path": "web/native-query-product-v1.mjs",
+      "sha256": "f51b2a7162ba9c9a850ea6cee011f4b0114865331470a391e890a69b6ae59b55"
+    },
+    {
+      "path": "web/native-query-rounds-v3.mjs",
+      "sha256": "992c1abe8f0127774f240ebde845cbd3e324e412c9a9e34f13f5051b82bec264"
+    },
+    {
+      "path": "web/native-query-runtime-v1.mjs",
+      "sha256": "85e82edff673c1d0a66c81f3ad2ac15b40d99466d0fefb67215ba0fc7fb4b7d4"
+    },
+    {
+      "path": "web/native-query-view-v1.mjs",
+      "sha256": "593d91fec04b3b925dc9982d55d874e7b0f3bab1f018a95f8fefd23c99bff5e5"
+    },
+    {
+      "path": "web/native-tool-completion-v1.mjs",
+      "sha256": "596725b29a3b9d32400a2476ad5ef36c5e54d5d81afa9a03a9b6756845ca6a23"
+    },
+    {
+      "path": "web/native-tool-outcomes-v1.mjs",
+      "sha256": "f39667bd4a2002ca10afe8293dbf702a80e33656391017ae5b095ac91250d458"
+    },
+    {
+      "path": "web/ontoweave-pg-api-v1.mjs",
+      "sha256": "cb842394150016012fdd1df38717f3f3ceac556499b20ed9e9af26c1c9171310"
+    },
+    {
+      "path": "web/ontoweave-pg-api-v2.mjs",
+      "sha256": "120fadb3b6afc1abc4efb34baac9b0a56a180e65bc1faebb08b84241dae6e914"
+    },
+    {
+      "path": "web/ontoweave-pg-query-registration-v1.mjs",
+      "sha256": "7b452263f385501cddb5c1ac931f13d0d54f11cca035c6465e83d38faec0bc14"
+    },
+    {
+      "path": "web/ontoweave-pg-workspace-v1.css",
+      "sha256": "cca6c96f3657bc7242970fddcae5de3c4a7c785725aa5de92ef68e20277ab5e5"
+    },
+    {
+      "path": "web/ontoweave-pg-workspace-v1.mjs",
+      "sha256": "45af8088e31ae179f16487bd15f6a063b27ff1df18fdee64e71d9782949a32b3"
+    },
+    {
+      "path": "web/ontoweave-pg-workspace-v2.css",
+      "sha256": "bc6dbad3ea73ae70d2c8734bd5d0d10da6bb2b5d2d54cc67fc37305cde319959"
+    },
+    {
+      "path": "web/ontoweave-pg-workspace-v2.mjs",
+      "sha256": "7b776c8ad2d767b5ca170c94bbff3a66dc71ab2ee7eb4217c7cf624738e2bda0"
+    },
+    {
+      "path": "web/parser-smoke.mjs",
+      "sha256": "35b3fb00f54bc04621ccf0d0596802566ce58f8d960377c9120667b44b8338dd"
+    },
+    {
+      "path": "web/requirements-docling.lock",
+      "sha256": "1b74e96c5c98a915da0be1ce8ab33e85b31389e89a0a6d428f6f30d8b29feeeb"
+    },
+    {
+      "path": "web/requirements-hybrid-chunking.lock",
+      "sha256": "f4348b75a0bf50852b2b5eb06b5c8443e5a66a3b7168a2533acb08314723fcfc"
+    },
+    {
+      "path": "web/runtime.mjs",
+      "sha256": "384c654c2c430396f5dd278b183823bfc030e34f13ec1c8bcc7d31bed8c2c528"
+    },
+    {
+      "path": "web/server.mjs",
+      "sha256": "c4d8f706f6ce5e7bceb7784ae8931e5622454065a7536b1baa4eb0f57dddd3e3"
+    },
+    {
+      "path": "web/setup_parser.py",
+      "sha256": "c3faff229ccf5eaf357335b44ad6779244cbbb4744a7345e62975bf8746d4ac3"
+    },
+    {
+      "path": "web/source-model-registry-v1.mjs",
+      "sha256": "c6e2aab938fb930077739759f4072a672ee7c75a551722f134286db78eb09098"
+    },
+    {
+      "path": "web/source-models-v1.mjs",
+      "sha256": "90eeb2db80b87d403689f02b2d4a93af1416799d841edfb2130b8387bad82dad"
+    },
+    {
+      "path": "web/unified-workbench-controller-v2.mjs",
+      "sha256": "87b693fb6541c9ae30f96ffdc2935dcb9c56b566a0efe55743077df184be5fed"
+    },
+    {
+      "path": "web/unified-workbench-v2.assets.json",
+      "sha256": "7ed0ea752b9ed059b0eef7e4e6e6a98c187de5549050f8c530cf858fcb2b2309"
+    },
+    {
+      "path": "web/unified-workbench-v2.html",
+      "sha256": "8b7e200ffd628a1a1a235eda7e50c986f8f41defef774a4f74065934143fc619"
+    },
+    {
+      "path": "web/unified-workbench-v2.mjs",
+      "sha256": "a8d2294a87ac6554c3c638474d186e80769d898be621c664f459cf9ff742c09f"
+    },
+    {
+      "path": "web/unified-workbench-view-v2.mjs",
+      "sha256": "d4bbc25f2a50653ee109491a5a40d5a06510ee07863c0ecfa32c2faed24160f4"
+    }
+  ]
+}

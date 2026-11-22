@@ -47,7 +47,7 @@ export function createMarkdownQueryTools({host,chat,operation,reader}){
  let complete=false;const incremental=createQueryIncremental({scope:reader.scope()}),navigationRequests=new Map();
  const executedStatuses=new Set(['READY','NO_MATCH','AMBIGUOUS','PARTIAL','NO_NEW_INFORMATION','STOPPED_NO_PROGRESS']);
  const definitions=host.definitions.filter(t=>t.name!=='lightog_submit_answer').map(t=>({...t,description:t.description.replaceAll('可直接提交的citation_refs','引用编号').replaceAll('可直接提交','可引用')}));
- const names=new Set(definitions.map(t=>t.name)),labels={lightog_find_entities:'定位实体',lightog_search_facts:'检索知识',lightog_retrieve:'检索知识',lightog_search_sources:'搜索资料',lightog_read_evidence:'读取资料',lightog_get_entity_facts:'读取实体知识',lightog_expand_graph:'展开关联',lightog_find_paths:'查找关系路径',lightog_compute:'计算'};
+ const names=new Set(definitions.map(t=>t.name)),labels={find_entities:'定位实体',search_knowledge:'检索知识',get_entity_facts:'读取实体知识',expand_graph:'展开关联',find_paths:'查找关系路径',search_sources:'搜索资料',read_source:'读取资料',lightog_find_entities:'定位实体',lightog_search_facts:'检索知识',lightog_retrieve:'检索知识',lightog_search_sources:'搜索资料',lightog_read_evidence:'读取资料',lightog_get_entity_facts:'读取实体知识',lightog_expand_graph:'展开关联',lightog_find_paths:'查找关系路径',lightog_compute:'计算'};
  const annotate=value=>{if(Array.isArray(value))return value.map(annotate);if(!value||typeof value!=='object')return value;const next=Object.fromEntries(Object.entries(value).map(([k,v])=>[k,annotate(v)]));if(Array.isArray(value.citation_refs))next.citation_markers=value.citation_refs.map(ref=>chat.state().registry.find(c=>c.citation_ref===ref)?.marker).filter(Boolean);if(value.citation_ref){const entry=chat.state().registry.find(c=>c.citation_ref===value.citation_ref);if(entry){next.marker=entry.marker;next.number=entry.number;}}return next;};
  return {definitions,isComplete:()=>complete,snapshot:()=>host.snapshot(),async call(name,args,context){
   need(names.has(name),'QUERY_TOOL_FORBIDDEN');const step_id='step_'+hash([operation.state().query_id,chat.state().last_event_seq,name]).slice(0,16),label=labels[name]??'检索资料';
@@ -61,6 +61,15 @@ export function createMarkdownQueryTools({host,chat,operation,reader}){
     const failedExecution={...clone(execution),executed:execution.executed??(value?.status==='INVALID_ARGUMENTS'||value?.status==='UNAVAILABLE_CAPABILITY'||value?.retrieval_executed===false?false:null),succeeded:false,can_infer_absence:false,knowledge_coverage:'NOT_ESTABLISHED',note:'本次工具结果未建立成功读取，不能作为知识不存在或已覆盖的证明。'};
     if(annotated.result){const {delivery_coverage,incremental,...diagnostic}=annotated.result;annotated.result={...diagnostic,execution:failedExecution};}else annotated.execution=failedExecution;
     return annotated;
+   }
+   if(reader.verify){
+    const short=value=>{
+     if(Array.isArray(value))return value.map(short);
+     if(!value||typeof value!=='object')return value;
+     const {citation_ref,...fields}=value;
+     return Object.fromEntries(Object.entries(fields).map(([key,field])=>[key,short(field)]));
+    };
+    return short(annotated);
    }
    if(annotated.result){
     const identity=row=>Object.fromEntries(['record_ref','subject_ref','surface','name','label','aliases','types','exact_match','source_refs'].filter(k=>row[k]!==undefined).map(k=>[k,row[k]]));
@@ -76,5 +85,8 @@ export function createMarkdownQueryTools({host,chat,operation,reader}){
     annotated.result.delivery_coverage={...incremental.coverage(),navigation:navigations,navigation_truncated:navigationRequests.size>navigations.length,navigation_limit:8,returned_page:{items:value.items?.length??0,has_next_page:Boolean(value.next_cursor),truncated:Boolean(value.truncated)}};
    }return annotated;
   }catch(error){chat.publish('tool.completed',{step_id,tool_name:name,label,status:'FAILED',code:error.code??'QUERY_TOOL_FAILED'});throw error;}
- },finishMarkdown(input){reader.assertCurrent();operation.assertActive();const answer=chat.finish(input);operation.stageAnswer(answer);complete=true;return answer;}};
+ },finishMarkdown(input){
+  const finish=()=>{reader.assertCurrent();operation.assertActive();const answer=chat.finish(input);operation.stageAnswer(answer);complete=true;return answer;};
+  return reader.verify?reader.verify(operation.signal).then(finish):finish();
+ }};
 }

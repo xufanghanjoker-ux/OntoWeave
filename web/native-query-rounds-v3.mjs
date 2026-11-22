@@ -1,33 +1,43 @@
-/** Query-only finite retrieval batches, bound to validated provider responses. */
+/** Bind Codex MCP executions to admitted provider tool calls. */
 import {clone,hash} from './cq-discovery-store-v2.mjs';
-const identity='lightog_find_entities';
-const content=new Set(['lightog_retrieve','lightog_search_facts','lightog_search_sources','lightog_read_evidence','lightog_get_entity_facts','lightog_expand_graph','lightog_find_paths']);
-const nameOf=name=>name.split('__').at(-1);
-const fingerprint=(name,args)=>hash({name:nameOf(name),args});
+
+const localName=name=>name.split('__').at(-1);
+const fingerprint=(name,args)=>hash({name:localName(name),args});
+
 export function createQueryRounds({onChange=()=>{}}={}){
- const state={version:'query-retrieval-rounds/3',identity_preparation_used:false,content_batches:0,phase:'INITIAL',batches:[],blocked_actions:0,final_request_sent:false};let active=null;
+ const state={version:'query-tool-admission/4',phase:'RETRIEVAL',batches:[],blocked_actions:0,final_request_sent:false};
+ let active=null;
  const publish=()=>onChange(clone(state));
+
  function register({request_ref,calls}){
-  const actions=calls.map(c=>({name:nameOf(c.name),args:typeof c.arguments==='string'?JSON.parse(c.arguments):c.arguments}));
-  const retrieval=actions.filter(a=>content.has(a.name)||a.name===identity);
-  let allowed=true,phase=state.phase;
-  if(actions.length===0){state.phase='ANSWER';phase='ANSWER';}
-  if(retrieval.length){
-   if(state.phase==='ANSWER')allowed=false;
-   else if(retrieval.every(a=>a.name===identity)&&state.content_batches===0&&!state.identity_preparation_used){state.identity_preparation_used=true;phase='IDENTITY_PREPARATION';}
-   else if(retrieval.every(a=>a.name===identity)&&state.content_batches===0){allowed=false;state.phase='ANSWER';phase='ANSWER';}
-   else if(state.content_batches<2){state.content_batches++;phase=state.content_batches===1?'INITIAL':'SUPPLEMENT';if(state.content_batches===2)state.phase='ANSWER';}
-   else{allowed=false;phase='ANSWER';state.phase='ANSWER';}
-  }
-  active={request_ref,phase,allowed,tickets:retrieval.map((a,i)=>({fingerprint:fingerprint(a.name,a.args),call_id:calls.filter(c=>content.has(nameOf(c.name))||nameOf(c.name)===identity)[i].call_id,ordinal:i+1,used:false}))};
-  state.batches.push({request_ref,phase,allowed,actions:retrieval.map((a,i)=>({name:a.name,args_sha256:hash(a.args),call_id:active.tickets[i].call_id,ordinal:i+1})),bindings:[]});publish();
+  const phase=state.phase;
+  const tickets=calls.map(call=>{
+   const args=typeof call.arguments==='string'?JSON.parse(call.arguments):call.arguments;
+   return {name:localName(call.name),args_sha256:hash(args),fingerprint:fingerprint(call.name,args),call_id:call.call_id,used:false};
+  });
+  active={request_ref,phase,tickets};
+  state.batches.push({request_ref,phase,actions:tickets.map(({name,args_sha256,call_id},index)=>({name,args_sha256,call_id,ordinal:index+1})),bindings:[]});
+  publish();
  }
+
  function claim(name,args,context){
-  if(!content.has(name)&&name!==identity)return {allowed:true,phase:state.phase};
-  const ticket=active?.tickets.find(t=>!t.used&&t.fingerprint===fingerprint(name,args));
-  if(ticket){ticket.used=true;state.batches.at(-1).bindings.push({call_id:ticket.call_id,ordinal:ticket.ordinal,args_sha256:hash(args),mcp_session_ref:context?.mcp_session_ref,mcp_request_id:context?.mcp_request_id,binding_method:'NAME_ARGUMENTS_AND_UNCLAIMED_PLAN_ORDINAL'});publish();}
-  if(!ticket||!active.allowed){state.blocked_actions++;publish();return {allowed:false,phase:'ANSWER',response:{ok:true,result:{status:'ANSWER_PHASE',retrieval_executed:false,items:[],guidance:'本轮不再获取新内容。请依据已返回证据回答所有可支持的部分，明确剩余缺口；需要消歧时向用户澄清，不再请求检索。'}}};}
+  const index=active?.tickets.findIndex(ticket=>!ticket.used&&ticket.fingerprint===fingerprint(name,args))??-1;
+  if(index<0||active.phase==='ANSWER'){
+   state.blocked_actions++;
+   publish();
+   return {allowed:false,response:{ok:true,result:{status:'UNBOUND_TOOL_CALL',retrieval_executed:false,items:[],guidance:'只使用本次已声明的工具调用及参数。'}}};
+  }
+  const ticket=active.tickets[index];
+  ticket.used=true;
+  state.batches.at(-1).bindings.push({call_id:ticket.call_id,ordinal:index+1,args_sha256:ticket.args_sha256,mcp_session_ref:context?.mcp_session_ref,mcp_request_id:context?.mcp_request_id,binding_method:'NAME_ARGUMENTS_AND_UNCLAIMED_PLAN_ORDINAL'});
+  publish();
   return {allowed:true,phase:active.phase,request_ref:active.request_ref};
  }
- return {register,claim,snapshot:()=>clone(state),isAnswerPhase:()=>state.phase==='ANSWER',markFinalRequest(){state.final_request_sent=true;publish();}};
+
+ return {
+  register,claim,snapshot:()=>clone(state),
+  stopForNoProgress(){state.phase='ANSWER';publish();},
+  isAnswerPhase:()=>state.phase==='ANSWER',
+  markFinalRequest(){state.final_request_sent=true;publish();},
+ };
 }

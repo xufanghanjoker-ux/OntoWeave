@@ -16,7 +16,7 @@ export function prepareNativeProductConfirmedCQDrafts({store,catalog,libraryId,s
  need(!state.cq_input,code('GLOBAL_CQ_ALREADY_SAVED'));
  need(catalog.isCurrent(snapshotId,libraryId),code('SOURCE_STALE'));
  const source=catalog.get(snapshotId,libraryId);
- need(state.input?.cq_chunk_policy?.version==='DOCLING_HYBRID_CQ_V1'&&hash(state.input)===hash(ledger.input)&&ledger.input.source_fingerprint===source.fingerprint&&ledger.input.source_snapshot_ref===snapshotId&&row.source_epoch===source.source_epoch,code('SOURCE_MISMATCH'));
+ need(['DOCLING_HYBRID_CQ_V1','DOCLING_STRUCTURE_CQ_V2'].includes(state.input?.cq_chunk_policy?.version)&&hash(state.input)===hash(ledger.input)&&ledger.input.source_fingerprint===source.fingerprint&&ledger.input.source_snapshot_ref===snapshotId&&row.source_epoch===source.source_epoch,code('SOURCE_MISMATCH'));
  need(Array.isArray(ledger.attempts)&&ledger.attempts.length>0&&ledger.attempts.every(a=>a.outcome==='RETURNED')&&new Set(ledger.attempts.map(a=>a.request_ref)).size===ledger.attempts.length,code('REQUEST_UNCONFIRMED'));
  const chunked=snapshotNativeChunkedCQ({store,runId:upstreamRunId}),planRecord=checked(store,K.plan,upstreamRunId),plan=planRecord.plan;
  const windows=plan?.windows??plan?.chunks;

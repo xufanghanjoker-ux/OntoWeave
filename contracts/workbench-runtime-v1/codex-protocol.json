@@ -1,0 +1,16 @@
+{
+  "version": "lightog-codex-protocol-lock/1",
+  "cli_version": "0.171.0-alpha.13",
+  "schemas": {
+    "v1/InitializeParams.json": "c608ff6bdd94e661423dca9b44cd1dcea7eac610f74e1310284c61eab64280bc",
+    "v1/InitializeResponse.json": "62ad689c2cb6379913c1d72749cfd8de5089d35760214123518eb92eef11acc9",
+    "v2/ThreadStartParams.json": "e9c6d3cc18d049bfbc0249add3808fb8e5a27e1a0b5a423767aafbc3859a9428",
+    "v2/ThreadStartResponse.json": "adafd968fc204c6a25395cba283b4acccb4f506c2ccf5c094864fbc0c38a63c7",
+    "v2/TurnStartParams.json": "7306e8a95152f1071b0fb8bcc22da20a798ae34c1c57b6d26dfafc2c2b47ee9e",
+    "v2/TurnStartResponse.json": "9604458949acd680b5c7c768d0e0f70eb3e026bff5496f5ad7afa02021ef305f",
+    "v2/TurnInterruptParams.json": "6dff382dae73d1dbc58406ed045605f647e7a49660e2540fbd2c6c24d60c5f2b",
+    "v2/TurnInterruptResponse.json": "531de6be06fe979b5963f249bab82498a175e614bf65ac12fb2e849dfe60bcf1",
+    "v2/TurnCompletedNotification.json": "f454bca363503aa6b56ca6ad673737dd8d86bee49d0c536b14d93c7df9f88005",
+    "v2/ThreadTokenUsageUpdatedNotification.json": "aba4f6c7e4a19b2b842c08ee793b57000c07dafd57b922ad0d8e7c76609108c2"
+  }
+}

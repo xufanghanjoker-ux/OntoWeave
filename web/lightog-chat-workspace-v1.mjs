@@ -54,7 +54,7 @@ function morph(oldNode,newNode){
 }
 function patchContents(target,html){if(!target)return;const template=target.ownerDocument?.createElement?.('template');if(!template?.content){target.innerHTML=html;return;}template.innerHTML=html;const shell=target.cloneNode(false);shell.append(template.content.cloneNode(true));morph(target,shell);}
 
-export function createLightogChatWorkspace({api,requestStream,uuid=()=>crypto.randomUUID(),storage=globalThis.localStorage,document:doc=globalThis.document,readModel=()=>null,matchesScope=()=>false,canAsk=()=>false,onOpenSource=()=>{},onOpenGraph=()=>{},onRoute=()=>{},onError=()=>{},memoryEnabled=false,memoryApi=api,memoryWorkspaceFactory=null,onMemoryReturn=async()=>null,contextualMemoryFactory=null,contextualMemoryRenderer=null}={}){
+export function createLightogChatWorkspace({api,requestStream,uuid=()=>crypto.randomUUID(),storage=globalThis.localStorage,document:doc=globalThis.document,readModel=()=>null,projectCitation=null,matchesScope=()=>false,canAsk=()=>false,onOpenSource=()=>{},onOpenGraph=()=>{},onRoute=()=>{},onError=()=>{},memoryEnabled=false,memoryApi=api,memoryWorkspaceFactory=null,onMemoryReturn=async()=>null,contextualMemoryFactory=null,contextualMemoryRenderer=null}={}){
  let host=null,libraryId=null,epoch=0,viewError=null,selectedTurn=null,selectedCitation=null,popover=null,anchor=null,mobilePanel='timeline';
  let inputMode='ask',memoryWorkspace=null,memoryPromise=null,lastAttachment={};
  let contextual=null,contextualPromise=null,contextualRenderer=contextualMemoryRenderer,supplementEpoch=0,supplementRenderKey=null;
@@ -144,7 +144,9 @@ export function createLightogChatWorkspace({api,requestStream,uuid=()=>crypto.ra
   selectedCitation={turn_id:turnId,query_ref:turn.query_ref,number,kind:entry.citation.kind,label:entry.label,text:'正在读取该引用的保留来源…',sources:[],loading:true};render();
   const response=await client.citation({libraryId,queryRef:turn.query_ref,citationRef:entry.citation_ref});if(!host||selection!==epoch||libraryId!==idAtStart)return;
   if(response.status!=='READY'){viewError=response.error?.message??'该引用尚未读回，未使用其他来源。';selectedCitation=null;render();return;}
-  const historical=response.historical||turn.historical||!matchesScope(turn.source_scope),projected=projectLightogQueryCitation(response.citation,readModel(),{historical});
+  const historical=response.historical||turn.historical||!matchesScope(turn.source_scope);
+  const projected=projectCitation?await projectCitation(response.citation,turn.source_scope,{historical}):projectLightogQueryCitation(response.citation,readModel(),{historical});
+  if(!host||selection!==epoch||libraryId!==idAtStart)return;
   if(memoryEnabled===true&&list(response.citation.record_sources).length){const sources=await readLightogMemoryCitationSources({citation:response.citation,libraryId:idAtStart,api:memoryApi});if(!host||selection!==epoch||libraryId!==idAtStart)return;projected.sources.push(...sources);projected.record_sources=structuredClone(response.citation.record_sources);}
   selectedCitation={...projected,turn_id:turnId,query_ref:turn.query_ref,conversation_id:turn.conversation_id,number,citation_ref:entry.citation_ref,source_scope:turn.source_scope,historical};render();syncRoute();
  }
@@ -174,7 +176,7 @@ export function createLightogChatWorkspace({api,requestStream,uuid=()=>crypto.ra
     rememberPosition();onOpenSource({libraryId,source,citation,queryRef:citation.query_ref,conversationId:citation.conversation_id,turnId:citation.turn_id,number:citation.number,sourceIndex:Number(button.dataset.index??0)});
    }
    else if(action==='open-knowledge'||action==='open-object'||action==='open-relation'){
-    if(!selectedCitation||selectedCitation.historical||!matchesScope(selectedCitation.source_scope))throw Error('引用不属于当前图版本，未替换为当前图中的其他记录。');const kind=action==='open-knowledge'?'knowledge':action==='open-object'?'entity':'relation',key=kind==='knowledge'?'knowledge_ids':kind==='entity'?'entity_ids':'relation_ids';if(!selectedCitation[key]?.includes(button.dataset.id))return;rememberPosition();onOpenGraph({libraryId,kind,id:button.dataset.id,scope:selectedCitation.source_scope});
+    if(!selectedCitation||(selectedCitation.historical&&!selectedCitation.graph_location_verified)||!matchesScope(selectedCitation.source_scope))throw Error('引用不属于当前图版本，未替换为当前图中的其他记录。');const kind=action==='open-knowledge'?'knowledge':action==='open-object'?'entity':'relation',key=kind==='knowledge'?'knowledge_ids':kind==='entity'?'entity_ids':'relation_ids';if(!selectedCitation[key]?.includes(button.dataset.id))return;rememberPosition();onOpenGraph({libraryId,kind,id:button.dataset.id,scope:selectedCitation.source_scope});
    }
    else if(action==='reconnect'){subscribe();}
    else if(action==='stop'){

@@ -81,6 +81,12 @@ def convert(request_path, target):
                     "parent_refs": parents, "role": role,
                     "provenance": [p.model_dump(mode="json") for p in getattr(item, "prov", [])]}
 
+        if request.get("structure_blocks"):
+            from docling_structure_blocks_v2 import build_structure_blocks
+            chunks = build_structure_blocks(doc, raw, encoding, budget, chunker, source_item, source.get("title", ""))
+            windows = [{**c, "member_ordinals": [c["ordinal"]]} for c in chunks if c["status"] == "PLANNED"]
+            result["documents"].append({"doc_ref": source["doc_ref"], "revision": source["revision"], "chunks": chunks, "windows": windows})
+            continue
         chunks = []
         for ordinal, chunk in enumerate(chunker.chunk(dl_doc=doc)):
             text = chunk.text

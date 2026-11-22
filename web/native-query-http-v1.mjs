@@ -13,13 +13,14 @@ export function createNativeQueryHttp({product,json,parseBody,authorize=async()=
       if(action==='conversations'&&req.method==='GET'){json(res,200,await product.conversations({libraryId}));return true;}
       if(conversationId&&req.method==='GET'){json(res,200,await product.conversation({libraryId,conversationId}));return true;}
       if(action==='ask'&&req.method==='POST'){
-        const body=await parseBody(req);need(body&&typeof body==='object'&&!Array.isArray(body)&&Object.keys(body).every(k=>['question','request_id','context','conversation_id','at','as_of'].includes(k)),'QUERY_HTTP_ARGUMENTS_INVALID');
-        const result=await product.ask({libraryId,question:body.question,requestId:body.request_id,context:body.context??[],conversationId:body.conversation_id??null,at:body.at,as_of:body.as_of});json(res,result.idempotent?200:202,result);return true;
+        const body=await parseBody(req);need(body&&typeof body==='object'&&!Array.isArray(body)&&Object.keys(body).every(k=>['question','request_id','context','conversation_id','at','as_of','view_revision'].includes(k)),'QUERY_HTTP_ARGUMENTS_INVALID');
+        const result=await product.ask({libraryId,question:body.question,requestId:body.request_id,context:body.context??[],conversationId:body.conversation_id??null,at:body.at,as_of:body.as_of,viewRevision:body.view_revision??null});json(res,result.idempotent?200:202,result);return true;
       }
       if(queryId&&subaction==='events'&&req.method==='GET'){
         const url=new URL(req.url,'http://localhost'),cursors=[url.searchParams.get('after'),req.headers['last-event-id']].filter(v=>v!==null&&v!==undefined&&v!=='');
         need(cursors.every(v=>typeof v==='string'&&/^(?:0|[1-9]\d{0,12})$/.test(v)),'QUERY_EVENT_CURSOR_INVALID');const after=Math.max(0,...cursors.map(Number));
         // Validate authorization, query and cursor before committing SSE headers.
+        await product.assertReadable?.({libraryId,queryId});
         const state=product.eventState({libraryId,queryId});need(Number.isSafeInteger(state.last_event_seq)&&after<=state.last_event_seq,'QUERY_EVENT_CURSOR_INVALID');
         // Let Node choose connection persistence from the mounted server policy.
         // Explicit keep-alive conflicts with mainProduct maxRequestsPerSocket=1.
@@ -30,8 +31,8 @@ export function createNativeQueryHttp({product,json,parseBody,authorize=async()=
       if(queryId&&!subaction&&req.method==='GET'){json(res,200,await product.status({libraryId,queryId}));return true;}
       if(queryId&&subaction==='cancel'&&req.method==='POST'){json(res,200,await product.cancel({libraryId,queryId}));return true;}
       need(false,'QUERY_HTTP_METHOD_NOT_ALLOWED');
-    }catch(error){if(res.headersSent){res.end();return true;}json(res,error.code==='QUERY_HTTP_FORBIDDEN'?403:['QUERY_NOT_FOUND','QUERY_CITATION_NOT_FOUND','QUERY_CONVERSATION_NOT_FOUND'].includes(error.code)?404:['QUERY_CONCURRENT_BUSY','QUERY_REQUEST_CONFLICT'].includes(error.code)?409:400,{error:{code:error.code??'QUERY_HTTP_FAILED'}});return true;}
+    }catch(error){if(res.headersSent){res.end();return true;}json(res,['QUERY_HTTP_FORBIDDEN','QUERY_AUTHORIZATION_REVOKED'].includes(error.code)?403:['QUERY_NOT_FOUND','QUERY_CITATION_NOT_FOUND','QUERY_CONVERSATION_NOT_FOUND'].includes(error.code)?404:['QUERY_CONCURRENT_BUSY','QUERY_REQUEST_CONFLICT'].includes(error.code)?409:400,{error:{code:error.code??'QUERY_HTTP_FAILED'}});return true;}
   };
 }
 
-function readTemporalUrl(url){const query=new URL(url,'http://localhost').searchParams,value={};if(query.has('at'))value.at=query.get('at');if(query.has('as_of')){try{value.as_of=JSON.parse(query.get('as_of'));}catch{need(false,'QUERY_TEMPORAL_AS_OF_INVALID');}}return value;}
+function readTemporalUrl(url){const query=new URL(url,'http://localhost').searchParams,value={};if(query.has('view_revision'))value.viewRevision=query.get('view_revision');if(query.has('at'))value.at=query.get('at');if(query.has('as_of')){try{value.as_of=JSON.parse(query.get('as_of'));}catch{need(false,'QUERY_TEMPORAL_AS_OF_INVALID');}}return value;}

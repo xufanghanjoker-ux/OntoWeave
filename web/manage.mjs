@@ -1,7 +1,7 @@
 /** Explicit local lifecycle commands. No OS autostart and no credential files. */
 import { spawn, spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline/promises';
-import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, openSync, closeSync, cpSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, openSync, closeSync, cpSync, lstatSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { createHash } from 'node:crypto';
 import { project, supportedNode, parserPython, doctor, cleanParserEnv } from './runtime.mjs';
@@ -33,12 +33,18 @@ if (command === 'doctor') {
 } else if (command === 'setup') {
   console.log('初始化将联网安装项目专用 Python 3.12 依赖，并下载布局、表格、OCR 权重（macOS 至少预留 4GB，Linux 默认 PyTorch 包可能需要 12GB 以上）；模型权重许可需在发布前核对。仅使用合成 PDF/DOCX，不发送业务资料到生成模型。');
   if (!process.argv.includes('--yes')) {
-    if (!process.stdin.isTTY) throw Error('请在终端确认，或明确传入 npm run setup -- --yes');
+    if (!process.stdin.isTTY) throw Error('请在终端确认，或明确传入 npm run setup:parser -- --yes');
     const rl = createInterface({ input: process.stdin, output: process.stdout });
     const yes = await rl.question('继续？输入 yes：'); rl.close(); if (yes !== 'yes') process.exit(0);
   }
-  mkdirSync(resolve(project, 'local-runs'), { recursive: true });
-  const manifestPath = resolve(project, 'local-runs/setup-manifest.json');
+  process.umask(0o077);
+  const stateDirectory = resolve(project, '.ontoweave');
+  mkdirSync(stateDirectory, { recursive: true, mode: 0o700 });
+  const directory = lstatSync(stateDirectory);
+  if (!directory.isDirectory() || directory.uid !== process.getuid() || (directory.mode & 0o077)) {
+    throw Error('Use an owner-only .ontoweave directory (mode 0700).');
+  }
+  const manifestPath = resolve(project, '.ontoweave/setup-manifest.json');
   const prior = doctor({ storage }).parser;
   const state = { status: 'PREPARING', at: new Date().toISOString() };
   const save = () => writeFileSync(manifestPath, JSON.stringify(state, null, 2), { mode: 0o600 }); save();
@@ -53,7 +59,7 @@ if (command === 'doctor') {
     if (versionCheck.status !== 0) throw Error('项目解析环境必须使用Python3.12；请按官方指引安装，不自动改写现有解释器');
     await run(parserPython(), ['-m', 'pip', 'install', '-r', 'web/requirements-docling.lock']);
     await run(parserPython(), ['-m', 'pip', 'install', '-r', 'web/requirements-hybrid-chunking.lock']);
-    const tokenizerCache=resolve(project,'local-runs/docling-models/tiktoken');
+    const tokenizerCache=resolve(project,'.ontoweave/docling-models/tiktoken');
     mkdirSync(tokenizerCache,{recursive:true});
     await run(parserPython(), ['-c', 'import tiktoken; tiktoken.get_encoding("cl100k_base")'], {...cleanParserEnv(),TIKTOKEN_CACHE_DIR:tokenizerCache});
     const env = cleanParserEnv(); delete env.HF_HUB_OFFLINE;
@@ -79,7 +85,7 @@ if (command === 'doctor') {
         state.files.push({ path: relative(project, path), sha256: createHash('sha256').update(readFileSync(path)).digest('hex') });
       }
     } }
-    scan(resolve(project, 'local-runs/docling-models'));
+    scan(resolve(project, '.ontoweave/docling-models'));
     if (!state.files.length) throw Error('模型缓存为空，不能报告就绪');
     state.docling = '2.138.0'; state.lock_sha256 = createHash('sha256').update(readFileSync(resolve(project, 'web/requirements-docling.lock'))).digest('hex');
     state.status = 'READY'; state.at = new Date().toISOString(); save(); console.log('PDF / DOCX / 扫描 PDF 本地验证通过；初始化就绪。');

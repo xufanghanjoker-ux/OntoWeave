@@ -3,7 +3,8 @@ target/
 node_modules/
 dist/
 .venv/
-.venv-docling*/
+.venv-docling*
+.venv-pg-cq/
 __pycache__/
 .pytest_cache/
 .env

@@ -1,0 +1,8 @@
+[
+  "unified-workbench-v2.mjs",
+  "unified-workbench-controller-v2.mjs",
+  "unified-workbench-view-v2.mjs",
+  "ontoweave-pg-api-v2.mjs",
+  "ontoweave-pg-workspace-v2.mjs",
+  "ontoweave-pg-workspace-v2.css"
+]

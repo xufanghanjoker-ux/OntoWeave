@@ -117,7 +117,7 @@ function validateSettledHybridPrefix({store,catalog,libraryId,snapshotId,upstrea
  check(catalog.isCurrent(snapshotId,libraryId),'SOURCE_STALE');
  const source=catalog.get(snapshotId,libraryId),input=state.input;
  check(source.documents?.length>0&&source.documents.every(d=>d.parser?.name==='docling'&&d.blocks?.length),'DOCLING_REQUIRED');
- check(input?.knowledge_build_policy==='EXTRACT_AND_INDEX_V1'&&input.cq_chunk_policy?.version==='DOCLING_HYBRID_CQ_V1'&&hash(input)===hash(ledger.input)&&ledger.binding===hash({input,limits:ledger.limits})&&hash(state.limits)===hash(ledger.limits)&&input.library_ref===libraryId&&input.source_snapshot_ref===snapshotId&&input.source_fingerprint===source.fingerprint&&row.source_epoch===source.source_epoch,'INPUT_CHANGED');
+ check(input?.knowledge_build_policy==='EXTRACT_AND_INDEX_V1'&&['DOCLING_HYBRID_CQ_V1','DOCLING_STRUCTURE_CQ_V2'].includes(input.cq_chunk_policy?.version)&&hash(input)===hash(ledger.input)&&ledger.binding===hash({input,limits:ledger.limits})&&hash(state.limits)===hash(ledger.limits)&&input.library_ref===libraryId&&input.source_snapshot_ref===snapshotId&&input.source_fingerprint===source.fingerprint&&row.source_epoch===source.source_epoch,'INPUT_CHANGED');
  const cq=state.cq_input,familyInput=state.family_input,families=state.families;
  check(cq?.run_id===upstreamRunId&&cq.source_snapshot_ref===snapshotId&&cq.items?.length>0&&unique(cq.items.map(q=>q.cq_ref))&&families?.families?.length>0&&familyInput?.input_ref===families.input_ref,'OUTPUTS_REQUIRED');
  const sourceRefs=refs=>Array.isArray(refs)&&refs.length>0&&refs.every(r=>source.documents.some(d=>d.doc_id===r.doc_ref&&d.revision===r.revision));
@@ -167,7 +167,7 @@ function validateSettledHybridPrefix({store,catalog,libraryId,snapshotId,upstrea
  }
  check(mapped.size===numbered.length,'MERGE_CHANGED');
  if(merge.mode==='AGENT_REFERENCE_DECISIONS')actor('CQ','cq_merge_'+hash(plan.plan_ref).slice(0,32));
- else check(['HOST_EXACT_DEDUP','HOST_DRAFT_FALLBACK'].includes(merge.mode),'MERGE_CHANGED');
+ else check((['HOST_EXACT_DEDUP','HOST_DRAFT_FALLBACK'].includes(merge.mode)||merge.mode==='HOST_CONSERVATIVE_RANGE_DEDUP_V1'&&plan.policy?.range_contract==='CQ_UNIT_RANGES_V1'),'MERGE_CHANGED');
  const familyActor=actor('FAMILY');
  check(ledger.attempts.filter(a=>a.kind==='GENERATION'&&a.role==='FAMILY').every(a=>familyActor.request_refs.includes(a.request_ref)),'REQUEST_BINDING_CHANGED');
  check(hash(createNativeFamilyInput({runId:upstreamRunId,sourceSnapshotRef:snapshotId,inputs:[cq]}))===hash(familyInput),'FAMILY_INPUT_CHANGED');

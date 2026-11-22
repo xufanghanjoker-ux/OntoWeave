@@ -1,3 +1,4 @@
+import {createNativeEventJournal} from './native-event-journal-v2.mjs';
 import {progressExecution,canGenerate,generationRemaining,wholeRunRemaining,localRuntimeTimeout} from './native-execution-controls-v1.mjs';
 import {createNativeObservableProgress} from './native-observable-progress-v1.mjs';
 import {waitForNativeQueryTools} from './native-query-readiness-v1.mjs';
@@ -5,6 +6,7 @@ import {deriveNativeToolArguments,ARGUMENT_NORMALIZATION,DERIVED_RESPONSE,normal
 import {bindNativeToolRegistry,checkNativeToolRegistry,registryWireNames,registryToolFeedback,registryInstructions} from './native-tool-registry-v1.mjs';
 import {deriveUnknownToolFeedback,confirmedRegistryCalls,TOOL_CALL_RECOVERY,TOOL_CALL_DERIVED_RESPONSE} from './native-tool-call-recovery-v1.mjs';
 import {createNativeAgentResources,NATIVE_RESOURCE_CONTRACT,resourceHelperName} from './native-agent-resources-v1.mjs';
+import {batchSettled,callSettled,failureClass,fixedMaterialInput,hasUndeclaredWriteField,localReject,localToolFeedback,matchesLocalResult,toolDoesNotStop,toolOutcome} from './native-tool-outcomes-v1.mjs';
 import {nativeCallOwner,qualifiedNativeCall,reconcileNativeToolCompletions} from './native-tool-completion-v1.mjs';
 /** Native Codex role runner. The parent run is the only inference budget owner. */
 import {spawn} from 'node:child_process';
@@ -20,6 +22,7 @@ import {createCQSSEBoundary} from './cq-sse-boundary-v1.mjs';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const INVOCATION='native_agent_invocation_v1',WIRE='native_agent_wire_v1',RESPONSE='native_agent_response_v1',EVENT='native_agent_event_v1';
+const FIXED_READ_AUDIT='native_agent_fixed_read_arguments_v1';
 const TOOL_FAILURE='native_agent_tool_failure_v1',TOOL_BATCH='native_agent_delivered_tool_batch_v1';
 const FORMAT_REPAIR='native_agent_format_repair_v1',FORMAT_REPAIR_VERSION='native-format-repair/1';
 const EMPTY_REPAIR_CONTINUATION_VERSION='native-empty-repair-continuation/1';
@@ -47,7 +50,7 @@ export function nativeTurnCompletedNormally(notification,turnId,threadId){
 }
 const permittedSkills=[
   ...['lightog-cq-discovery','lightog-cq-family-normalization','lightog-cq-quality-review'].map(name=>join(root,'.agents/skills',name,'SKILL.md')),
-  ...['lightog-entity-resolution','lightog-ontology-formation','lightog-relation-review','lightog-semantic-discovery','lightog-knowledge-organization','lightog-scope-planning','lightog-extraction','lightog-local-review','lightog-cq-discovery-product-v1','lightog-cq-family-normalization-product-v1','lightog-document-temporal-interpretation','lightog-simplified-extraction','lightog-program-output-extraction'].map(name=>join(root,'docs/skill-drafts',name,'SKILL.md'))
+  ...['lightog-entity-resolution','lightog-ontology-formation','lightog-relation-review','lightog-semantic-discovery','lightog-knowledge-organization','lightog-scope-planning','lightog-extraction','lightog-local-review','lightog-cq-discovery-product-v1','lightog-cq-family-normalization-product-v1','lightog-document-temporal-interpretation','lightog-simplified-extraction','lightog-program-output-extraction','ontoweave-semantic-extraction-v2','ontoweave-ontology-alignment-v2','ontoweave-ontology-alignment-v1'].map(name=>join(root,'docs/skill-drafts',name,'SKILL.md'))
 ];
 const openStatuses=['OPEN','RUNNING'];
 export function selectedNativeSkills(paths) {
@@ -186,13 +189,14 @@ export function createNativeAgentTransport({store,run,role,invocationRef,upstrea
     if(pendingNameRecovery?.status==='AWAIT_FEEDBACK'){
       const batch=store.getRecord(TOOL_BATCH,pendingNameRecovery.request_ref);
       const feedbackValue=(value,depth=0)=>{if(depth>8)return false;if(typeof value==='string'){try{return feedbackValue(JSON.parse(nativeOutputWithoutMetadata(value.trim())),depth+1);}catch{return false;}}if(Array.isArray(value))return value.some(v=>feedbackValue(v,depth+1));if(!value||typeof value!=='object')return false;return value.ok===true&&value.result?.recovery_ref===pendingNameRecovery.recovery_ref&&value.result?.code==='NATIVE_TOOL_NOT_FOUND'||['structuredContent','content','output','text'].some(k=>feedbackValue(value[k],depth+1));};
-      const feedbackValid=pendingNameRecovery.used===0&&batch?.calls.every(c=>c.status==='COMPLETED')&&pendingNameRecovery.mapping.every(m=>pendingNameRecovery.feedback_call_ids.includes(m.call_id)&&
+      const feedbackValid=pendingNameRecovery.used===0&&batch&&batchSettled(batch)&&pendingNameRecovery.mapping.every(m=>pendingNameRecovery.feedback_call_ids.includes(m.call_id)&&
         body.input?.some(i=>i.type==='function_call'&&i.call_id===m.call_id&&qualifiedCall(i)===toolRegistry.namespace+'__'+toolRegistry.error_bridge&&i.arguments===m.derived_arguments)&&
         body.input?.some(i=>i.type==='function_call_output'&&i.call_id===m.call_id&&feedbackValue(i.output)));
       if(!feedbackValid){store.putRecord(TOOL_FAILURE,id('native_tool_failure'),{run_id:run.state().run_id,invocation_ref:invocationRef,role,...scopeBinding,reason:'NATIVE_TOOL_RECOVERY_FEEDBACK_INVALID',stage:'TOOL_NAME_RECOVERY_FEEDBACK',blocked_before_reserve:true,provider_request_sent:false,body_utf8:wire.toString('utf8'),body_sha256:sha(wire),batch:clone(batch),recovery:clone(pendingNameRecovery)});stop('NATIVE_TOOL_RECOVERY_FEEDBACK_INVALID');}
     }
     let state=repair(),feedback=null;
-    const failures=nativeToolOutputFailures(body,localResourceOutput).filter(failure=>!handled(state,failure));
+    const invocationBatches=store.listRecords(TOOL_BATCH).filter(b=>b.invocation_ref===invocationRef);
+    const failures=nativeToolOutputFailures(body,(input,item)=>localResourceOutput?.(input,item)===true||localToolFeedback(invocationBatches,input,item)).filter(failure=>!handled(state,failure));
     if(state?.status==='AWAIT_NATIVE_FEEDBACK'){
       feedback=failures.length===1?failures[0]:null;
       const original=(body.input??[]).find(item=>item.type==='function_call'&&item.call_id===state.original.call_id);
@@ -308,7 +312,22 @@ export function createNativeAgentTransport({store,run,role,invocationRef,upstrea
           used:0,status:'AWAIT_NATIVE_FEEDBACK',stage:'FORMAT_FAILURE_RETURNED',original,handled_errors:[],semantic_equivalence_claimed:false,
           history:[{stage:'FORMAT_FAILURE_RETURNED',at:Date.now(),original}]});
       }
-      if(calls.length&&invalid.length===0)store.putRecord(TOOL_BATCH,requestRef,{run_id:run.state().run_id,invocation_ref:invocationRef,request_ref:requestRef,calls:calls.map(call=>({call_id:call.call_id,tool_name:call.name.split('__').at(-1),qualified_tool_name:qualifiedNativeCall(call),execution_owner:nativeCallOwner(call),arguments_sha256:hash(JSON.parse(call.arguments)),status:'PENDING'}))});
+      if(calls.length&&invalid.length===0){
+        need(new Set(calls.map(c=>c.call_id)).size===calls.length,'NATIVE_TOOL_CALL_ID_DUPLICATE');
+        const bound=calls.map(call=>{
+          const argumentsSha=hash(JSON.parse(call.arguments)),qualified=qualifiedNativeCall(call);
+          const earlier=invocationBatches.flatMap(batch=>batch.calls.filter(c=>c.call_id===call.call_id)
+            .map(c=>({batch,call:c})));
+          need(earlier.every(({call:c})=>c.qualified_tool_name===qualified&&c.arguments_sha256===argumentsSha),
+            'NATIVE_TOOL_CALL_ID_REDELIVERY_CONFLICT');
+          const prior=earlier.find(({call:c})=>callSettled(c)&&c.result);
+          need(!earlier.length||prior,'NATIVE_TOOL_CALL_REPLAY_UNSETTLED');
+          return {call_id:call.call_id,tool_name:call.name.split('__').at(-1),qualified_tool_name:qualified,
+            execution_owner:nativeCallOwner(call),arguments_sha256:argumentsSha,raw_arguments_sha256:hash(call.arguments),
+            response_sha256:sha(data),status:'PENDING',...(prior?{replay_request_ref:prior.batch.request_ref}:{})};
+        });
+        store.putRecord(TOOL_BATCH,requestRef,{run_id:run.state().run_id,invocation_ref:invocationRef,request_ref:requestRef,calls:bound});
+      }
       return {status:response.status,content_type:'text/event-stream',body:delivered};
     }catch(error){
       interrupt('TRANSPORT_ERROR',{error_code:error.code??'NATIVE_SENT_RESULT_UNKNOWN'});
@@ -359,7 +378,7 @@ export async function createNativeAgentBridge({store,run,tools,definitions,trans
         need(!tools.isComplete()||bound,'NATIVE_ROLE_COMPLETE');
         const outcome=resources.perform(method,params),rpc=resources.issue(method,params,context,outcome,matches.map(({call})=>({call_id:call.call_id,tool_name:call.tool_name,arguments_sha256:call.arguments_sha256})));
         let batchComplete=true;
-        if(bound){const {batch,call}=bound;call.status=outcome.status==='FATAL'?'FAILED':'COMPLETED';call.resource_feedback_ref=rpc.feedback_ref;call.resource_outcome=outcome.status;store.putRecord(TOOL_BATCH,batch.request_ref,batch);batchComplete=batch.calls.every(c=>c.status==='COMPLETED');
+        if(bound){const {batch,call}=bound;call.status=outcome.status==='FATAL'?'FAILED':'COMPLETED';call.resource_feedback_ref=rpc.feedback_ref;call.resource_outcome=outcome.status;store.putRecord(TOOL_BATCH,batch.request_ref,batch);batchComplete=batchSettled(batch);
           if(outcome.status!=='FATAL')progress?.observe({name:helper,args:businessArgs,result:{ok:true},definition:{annotations:{readOnlyHint:true}},observation:outcome.observation??{method,status:outcome.status,code:outcome.error?.message,catalog:resources.binding},batchRef:batch.request_ref,batchComplete});
           if(batchComplete&&typeof tools.flushPendingFinish==='function')await tools.flushPendingFinish();
         }
@@ -389,34 +408,70 @@ export async function createNativeAgentBridge({store,run,tools,definitions,trans
         if(toolRegistry)need(callContext,'NATIVE_CALL_CONTEXT_REQUIRED');
         if(callContext&&store){
           const prior=store.listRecords(TOOL_BATCH).filter(b=>b.invocation_ref===invocationRef).flatMap(b=>b.calls).find(c=>c.tool_call_ref===callContext.tool_call_ref);
-          if(prior){tools.assertLifecycleCurrent?.();need(prior.status==='COMPLETED'&&prior.tool_name===name&&prior.arguments_sha256===hash(args??{})&&prior.result,'NATIVE_TOOL_CALL_REDELIVERY_CONFLICT');res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(prior.result));return;}
+          if(prior){tools.assertLifecycleCurrent?.();need(callSettled(prior)&&prior.tool_name===name&&prior.arguments_sha256===hash(args??{})&&prior.result,'NATIVE_TOOL_CALL_REDELIVERY_CONFLICT');res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(prior.result));return;}
         }
-        need(!tools.isComplete()||store?.listRecords(TOOL_BATCH).some(b=>b.invocation_ref===invocationRef&&b.calls.some(c=>c.status!=='COMPLETED')),'NATIVE_ROLE_COMPLETE');
+        need(!tools.isComplete()||store?.listRecords(TOOL_BATCH).some(b=>b.invocation_ref===invocationRef&&b.calls.some(c=>!callSettled(c))),'NATIVE_ROLE_COMPLETE');
         let batchRef=null,callId=null;
-        if(store&&(tools.argumentPolicy||store.listRecords(TOOL_BATCH).some(b=>b.invocation_ref===invocationRef))){store.transaction(()=>{const batches=store.listRecords(TOOL_BATCH).filter(b=>b.invocation_ref===invocationRef),batch=batches.find(b=>b.calls.some(c=>c.status==='PENDING'&&c.tool_name===name&&c.arguments_sha256===hash(args??{})));need(batch,'NATIVE_UNBOUND_TOOL_ARGUMENTS');const call=batch.calls.find(c=>c.status==='PENDING'&&c.tool_name===name&&c.arguments_sha256===hash(args??{}));batchRef=batch.request_ref;callId=call.call_id;call.status='EXECUTING';call.tool_call_ref=callContext?.tool_call_ref??null;store.putRecord(TOOL_BATCH,batchRef,batch);callContext={...callContext,native_tool_batch_ref:batchRef,pending_tool_calls:batch.calls.filter(c=>c.call_id!==callId&&c.status!=='COMPLETED').map(c=>({call_id:c.call_id,tool_name:c.tool_name}))};});}
+        if(store&&(tools.fixedMaterialReads?.includes(name)||tools.argumentPolicy||store.listRecords(TOOL_BATCH).some(b=>b.invocation_ref===invocationRef))){store.transaction(()=>{const batches=store.listRecords(TOOL_BATCH).filter(b=>b.invocation_ref===invocationRef),batch=batches.find(b=>b.calls.some(c=>c.status==='PENDING'&&c.tool_name===name&&c.arguments_sha256===hash(args??{})));need(batch,'NATIVE_UNBOUND_TOOL_ARGUMENTS');const call=batch.calls.find(c=>c.status==='PENDING'&&c.tool_name===name&&c.arguments_sha256===hash(args??{}));batchRef=batch.request_ref;callId=call.call_id;call.status='EXECUTING';call.tool_call_ref=callContext?.tool_call_ref??null;store.putRecord(TOOL_BATCH,batchRef,batch);callContext={...callContext,native_tool_batch_ref:batchRef,pending_tool_calls:batch.calls.filter(c=>c.call_id!==callId&&!callSettled(c)).map(c=>({call_id:c.call_id,tool_name:c.tool_name}))};});}
         if(callId)callContext={...callContext,native_tool_call_id:callId};
         const normalizationRefs=(store?.listRecords(ARGUMENT_NORMALIZATION)??[]).filter(r=>r.invocation_ref===invocationRef&&(r.wire_tool_name??r.tool_name)===name&&(!batchRef||r.request_ref===batchRef&&r.call_id===callId)&&hash(JSON.parse(r.normalized_arguments))===hash(args??{})).map(r=>r.normalization_ref);
         if(normalizationRefs.length)callContext={...callContext,argument_normalization_refs:normalizationRefs};
+        const definition=definitions.find(d=>d.name===name);
+        const binding=batchRef?store.getRecord(TOOL_BATCH,batchRef).calls.find(c=>c.call_id===callId):null;
         let value;
-        if(toolRegistry&&name===toolRegistry.error_bridge){
+        if(binding?.replay_request_ref){
+          tools.assertLifecycleCurrent?.();
+          const original=store.getRecord(TOOL_BATCH,binding.replay_request_ref)?.calls.find(c=>c.call_id===callId);
+          need(original&&callSettled(original)&&original.result,'NATIVE_TOOL_CALL_REPLAY_UNSETTLED');
+          value=original.result;
+        }else if(tools.closedBusinessWrites?.includes(name)&&hasUndeclaredWriteField(definition.inputSchema,args)){
+          value=localReject('BUSINESS_WRITE_UNKNOWN_FIELD','请只提交该工具声明的业务字段。');
+        }else if(toolRegistry&&name===toolRegistry.error_bridge){
           const recovery=store.getRecord(TOOL_CALL_RECOVERY,invocationRef);const{record_sha256,...signed}=recovery??{};
           need(recovery&&record_sha256===hash(signed)&&recovery.registry_sha256===toolRegistry.registry_sha256&&recovery.status==='AWAIT_FEEDBACK'&&recovery.request_ref===batchRef&&args?.recovery_ref===recovery.recovery_ref&&Object.keys(args).length===1&&recovery.mapping.some(m=>m.call_id===callId),'NATIVE_TOOL_ERROR_BRIDGE_UNBOUND');
           value=registryToolFeedback(toolRegistry,recovery.recovery_ref);
           const next={...signed,feedback_call_ids:[...new Set([...recovery.feedback_call_ids,callId])]};store.putRecord(TOOL_CALL_RECOVERY,invocationRef,{...next,record_sha256:hash(next)});
+        }else if(tools.fixedMaterialReads?.includes(name)){
+          const call=store.getRecord(TOOL_BATCH,batchRef).calls.find(c=>c.call_id===callId);
+          need(call.qualified_tool_name==='mcp__lightog_native__'+name,'NATIVE_FIXED_READ_NAMESPACE_INVALID');
+          const fixed=fixedMaterialInput(args);
+          if(fixed.normalized||fixed.result){
+            const audit={run_id:run.state().run_id,invocation_ref:invocationRef,request_ref:batchRef,call_id:callId,
+              qualified_tool_name:call.qualified_tool_name,raw_arguments_sha256:call.raw_arguments_sha256,
+              parsed_arguments_sha256:call.arguments_sha256,response_sha256:call.response_sha256,
+              outcome:fixed.normalized?'EMPTY_OBJECT_WRAPPER_NORMALIZED':'LOCAL_REJECT',
+              normalized_arguments_sha256:fixed.normalized?hash(fixed.args):null};
+            store.putRecord(FIXED_READ_AUDIT,hash([invocationRef,batchRef,callId]),{...audit,record_sha256:hash(audit)});
+          }
+          value=fixed.result??await tools.call(name,fixed.args,callContext);
         }else value=await tools.call(name,args??{},callContext);
-        if(batchRef){const batch=store.getRecord(TOOL_BATCH,batchRef),call=batch.calls.find(c=>c.call_id===callId);call.status=value?.ok===false?'FAILED':'COMPLETED';call.result=clone(value);store.putRecord(TOOL_BATCH,batchRef,batch);if(value?.ok!==false&&batch.calls.every(c=>c.status==='COMPLETED')&&typeof tools.flushPendingFinish==='function')await tools.flushPendingFinish();}
-        if(value?.ok===false)onFailure(value.error?.code??'NATIVE_TOOL_REJECTED');
+        const classified=toolOutcome(value);
+        const outcome=binding?.replay_request_ref&&classified==='SUCCESS'?'REUSED':classified;
+        if(batchRef){const batch=store.getRecord(TOOL_BATCH,batchRef),call=batch.calls.find(c=>c.call_id===callId);
+          call.status=outcome==='LOCAL_REJECT'?'LOCAL_REJECT':toolDoesNotStop(outcome)?'COMPLETED':'FAILED';
+          call.execution_outcome=outcome;call.result=clone(value);store.putRecord(TOOL_BATCH,batchRef,batch);
+          if(batchSettled(batch)&&typeof tools.flushPendingFinish==='function')await tools.flushPendingFinish();
+        }
+        if(!toolDoesNotStop(outcome)){
+          if(outcome==='UNKNOWN_HOLD')run.stop(value.error?.code??'NATIVE_TOOL_COMMIT_UNKNOWN','UNKNOWN_HOLD');
+          onFailure(value.error?.code??'NATIVE_TOOL_REJECTED');
+        }
         res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify(value));
-        const batchComplete=!batchRef||store.getRecord(TOOL_BATCH,batchRef).calls.every(c=>c.status==='COMPLETED');
-        if(!toolRegistry||name!==toolRegistry.error_bridge)progress?.observe({name,args:args??{},result:value,definition:definitions.find(d=>d.name===name),observation:tools.progressSnapshot?.({name,args:args??{},result:value}),batchRef,batchComplete});
-        if(value?.ok!==false&&tools.isComplete()&&batchComplete)setImmediate(onComplete);
+        const batchComplete=!batchRef||batchSettled(store.getRecord(TOOL_BATCH,batchRef));
+        if(!tools.isComplete()&&(!toolRegistry||name!==toolRegistry.error_bridge))progress?.observe({name,args:args??{},result:value,definition:definitions.find(d=>d.name===name),observation:tools.progressSnapshot?.({name,args:args??{},result:value}),batchRef,batchComplete});
+        if(toolDoesNotStop(outcome)&&tools.isComplete()&&batchComplete)setImmediate(onComplete);
         return;
       }
       need(req.url==='/v1/responses','NATIVE_LOCAL_ROUTE_FORBIDDEN');
       const abort=new AbortController();res.on('close',()=>{if(!res.writableEnded)abort.abort({native_abort_source:shutdownReason?'PARENT_SHUTDOWN':'CLIENT_CONNECTION_CLOSED',...(shutdownReason?{parent_reason:shutdownReason}:{})});});
       const result=await transport.send(bytes,abort.signal);res.writeHead(result.status,{'Content-Type':result.content_type});res.end(result.body);
     }catch(error){
-      if(req.headers.authorization==='Bearer '+token&&error.code!=='NATIVE_ROLE_COMPLETE')onFailure(error.code??'NATIVE_BRIDGE_FAILED');
+      if(req.headers.authorization==='Bearer '+token&&error.code!=='NATIVE_ROLE_COMPLETE'){
+        if(['NATIVE_DATABASE_COMMIT_UNKNOWN','EXTRACTION_PG_OUTCOME_UNKNOWN'].includes(error.code)){
+          try{run.stop(error.code,'UNKNOWN_HOLD');}catch{/* The role's host retains the unresolved commit. */}
+        }
+        onFailure(error.code??'NATIVE_BRIDGE_FAILED');
+      }
       if(!res.headersSent)res.writeHead(409,{'Content-Type':'application/json'});
       if(!res.writableEnded)res.end(JSON.stringify({error:{type:'lightog_native_gate',message:error.code??'NATIVE_LOCAL_REQUEST_FAILED'}}));
     }
@@ -424,7 +479,14 @@ export async function createNativeAgentBridge({store,run,tools,definitions,trans
   const server=createServer((req,res)=>{const promise=handler(req,res);pending.add(promise);promise.finally(()=>pending.delete(promise));});
   server.on('connect',(_req,socket)=>socket.destroy());
   await new Promise((done,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',done);});
-  return {url:'http://127.0.0.1:'+server.address().port,token,markShutdown:reason=>{shutdownReason??=reason;},registerResourceSkills:copied=>resources?.registerRuntimeSkills(copied),localResourceOutput:(body,item)=>resources?.localOutput(body,item)===true,localResourceFailure:notification=>resources?.localNativeFailure(notification)===true,async close(){shutdownReason??='HOST_BRIDGE_CLOSE';server.closeAllConnections();await new Promise(done=>server.close(done));await Promise.allSettled([...pending]);}};
+  return {url:'http://127.0.0.1:'+server.address().port,token,markShutdown:reason=>{shutdownReason??=reason;},registerResourceSkills:copied=>resources?.registerRuntimeSkills(copied),localResourceOutput:(body,item)=>resources?.localOutput(body,item)===true,localResourceFailure:notification=>resources?.localNativeFailure(notification)===true,
+    localToolFailure:notification=>{
+      const item=notification.params?.item;
+      if(item?.server!=='lightog_native'||item?.status==='failed'||item?.error)return false;
+      const argsSha=hash(item.arguments??{});
+      return store?.listRecords(TOOL_BATCH).some(b=>b.invocation_ref===invocationRef&&b.calls.some(c=>
+        c.call_id===item.id&&c.tool_name===item.tool&&c.arguments_sha256===argsSha&&matchesLocalResult(c,item.result)));
+    },async close(){shutdownReason??='HOST_BRIDGE_CLOSE';server.closeAllConnections();await new Promise(done=>server.close(done));await Promise.allSettled([...pending]);}};
 }
 
 export function writeNativeAgentConfig({runtimeDirectory,bridge,skills,model='qwen3.8-flash',toolOutputTokenLimit=NATIVE_TOOL_OUTPUT_TOKEN_LIMIT,maxFormatRepairs=0,maxIncompleteContinuations=0,toolRegistry=null,runtimeInputPolicy=null}){
@@ -519,10 +581,12 @@ export function resolveNativeRuntimeSelection(runtimeBinding=null){
 export async function createNativeCodexAppServer({runtimeDirectory,bridge,skills,model,timeoutMs=20000,onFailure=()=>{},executable=NATIVE_CODEX_EXECUTABLE,toolOutputTokenLimit=NATIVE_TOOL_OUTPUT_TOKEN_LIMIT,maxFormatRepairs=0,maxIncompleteContinuations=0,progressTime=null,queryReadiness=null,runtimeBinding=null,toolRegistry=null,runtimeInputPolicy=null,localResourceFailure=null}){
   need([0,1].includes(maxFormatRepairs),'NATIVE_FORMAT_REPAIR_POLICY_INVALID');
   need([0,1,2].includes(maxIncompleteContinuations),'NATIVE_INCOMPLETE_CONTINUATION_POLICY_INVALID');
+  const setupStarted=performance.now();
   const selection=resolveNativeRuntimeSelection(runtimeBinding),{lock}=selection;
   need(sha(readFileSync(executable))===lock.executable_sha256,'NATIVE_CODEX_EXECUTABLE_CHANGED');
   const isolated=writeNativeAgentConfig({runtimeDirectory,bridge,skills,model,toolOutputTokenLimit,maxFormatRepairs,maxIncompleteContinuations,toolRegistry,runtimeInputPolicy});
   bridge.registerResourceSkills?.(isolated.skills);
+  const serverStarting=performance.now();
   const child=spawn(executable,['app-server','--listen','stdio://'],{cwd:isolated.cwd,env:{PATH:process.env.PATH??'/usr/bin:/bin',
     CODEX_HOME:isolated.configRoot,NO_PROXY:'127.0.0.1,localhost',RUST_LOG:'error'},stdio:['pipe','pipe','pipe']});
   const lines=createInterface({input:child.stdout,crlfDelay:Infinity}),pending=new Map(),notifications=[],listeners=new Set(),readinessListeners=new Set();
@@ -542,6 +606,7 @@ export async function createNativeCodexAppServer({runtimeDirectory,bridge,skills
     if(message.id!==undefined&&message.method){onFailure('NATIVE_UNEXPECTED_RPC');send({id:message.id,error:{code:-32601,message:'Host declines approvals or unrelated execution'}});return;}
     if(message.method==='item/completed'&&message.params?.item?.type==='mcpToolCall'&&
       (message.params.item.status==='failed'||message.params.item.error||message.params.item.result?.structuredContent?.ok===false)&&localResourceFailure?.(message)!==true)onFailure('NATIVE_MCP_NATIVE_CALL_FAILED');
+    message.native_received_at=Date.now();
     notifications.push(message);for(const notify of readinessListeners)notify(message);wake();
   });
   child.stderr.on('data',bytes=>{if(diagnostics.length<16000)diagnostics+=bytes.toString();});
@@ -551,7 +616,7 @@ export async function createNativeCodexAppServer({runtimeDirectory,bridge,skills
   async function close(){if(!closed){hostCloseRequested=child.exitCode===null&&child.signalCode===null;child.stdin.end();child.kill('SIGTERM');await new Promise(done=>{const timer=setTimeout(()=>{child.kill('SIGKILL');done();},1500);child.once('exit',()=>{clearTimeout(timer);done();});});}lines.close();rmSync(isolated.configRoot,{recursive:true,force:true});}
   try{await rpc('initialize',{clientInfo:{name:'lightog_native',title:'LightOG Native Business Runtime',version:'1.0.0'},capabilities:{experimentalApi:false}});send({method:'initialized',params:{}});}
   catch(error){await close();throw error;}
-  return {metadata:{cli_version:lock.cli_version,executable_sha256:lock.executable_sha256,transport:'stdio-jsonl',native_profile:true,tool_output_token_limit:toolOutputTokenLimit,runtime_lock_source:selection.source,...(selection.binding?{runtime_binding:selection.binding}:{})},
+  return {metadata:{setup_ms:serverStarting-setupStarted,app_server_ready_ms:performance.now()-serverStarting,cli_version:lock.cli_version,executable_sha256:lock.executable_sha256,transport:'stdio-jsonl',native_profile:true,tool_output_token_limit:toolOutputTokenLimit,runtime_lock_source:selection.source,...(selection.binding?{runtime_binding:selection.binding}:{})},
     diagnostics:()=>diagnostics.replaceAll(bridge.token,'[REDACTED]'),
     async start({prompt}){
       need(!handle,'NATIVE_RUNTIME_ALREADY_STARTED');
@@ -585,7 +650,14 @@ export async function createNativeCodexAppServer({runtimeDirectory,bridge,skills
         need(!closed,hostCloseRequested?'NATIVE_CODEX_HOST_CLOSED':'NATIVE_CODEX_DISCONNECTED');
         await new Promise(done=>{const timer=setTimeout(()=>{listeners.delete(notify);done();},50);function notify(){clearTimeout(timer);done();}listeners.add(notify);});
       }need(false,'NATIVE_OBSERVATION_TIMEOUT');}finally{observing=false;}
-    },close};
+    },
+    drainNotifications(){
+      const tail=notifications.slice(observationCursor).map((event,index)=>({event_id:observationCursor+index+1,...event}));
+      observationCursor=notifications.length;
+      return tail;
+    },
+    notificationCounts:()=>({received:notifications.length,observed:observationCursor}),
+    close};
 }
 
 export async function runNativeAgent({store,run,role,tools,skillPaths,prompt,runtimeDirectory,upstream,model='qwen3.8-flash',agentScope=null,
@@ -603,7 +675,11 @@ export async function runNativeAgent({store,run,role,tools,skillPaths,prompt,run
   const completionBinding=maxIncompleteContinuations>0?{completion_policy:{max_incomplete_continuations:maxIncompleteContinuations}}:{};
   const definitions=definitionsOf(tools),skills=selectedNativeSkills(skillPaths),runId=run.state().run_id,key=hash({run_id:runId,role,...scopeBinding});
   const programArgumentPolicy=tools.argumentPolicy??null;
-  const inputHash=hash({role,...scopeBinding,prompt,definitions,...(tools.modelOutputContract?{model_output_contract:tools.modelOutputContract}:{}),resource_contract:NATIVE_RESOURCE_CONTRACT,...(runtimeInputPolicy?{runtime_input_policy:runtimeInputPolicy}:{}),...(toolRegistry?{tool_registry:toolRegistry}:{}),...(programArgumentPolicy?{program_argument_policy:programArgumentPolicy}:{}),format_repair_policy:formatRepairPolicy,...completionBinding,skills:skills.map(({path,sha256,tree_sha256})=>({path,sha256,tree_sha256}))});
+  const fixedMaterialReads=tools.fixedMaterialReads??[];
+  need(new Set(fixedMaterialReads).size===fixedMaterialReads.length&&fixedMaterialReads.every(name=>
+    definitions.some(d=>d.name===name&&d.annotations?.readOnlyHint===true&&d.inputSchema.additionalProperties===false&&Object.keys(d.inputSchema.properties??{}).length===0)),
+    'NATIVE_FIXED_MATERIAL_POLICY_INVALID');
+  const inputHash=hash({role,...scopeBinding,prompt,definitions,...(tools.modelOutputContract?{model_output_contract:tools.modelOutputContract}:{}),resource_contract:NATIVE_RESOURCE_CONTRACT,...(runtimeInputPolicy?{runtime_input_policy:runtimeInputPolicy}:{}),...(toolRegistry?{tool_registry:toolRegistry}:{}),...(fixedMaterialReads.length?{fixed_material_reads:fixedMaterialReads}:{}),...(programArgumentPolicy?{program_argument_policy:programArgumentPolicy}:{}),format_repair_policy:formatRepairPolicy,...completionBinding,skills:skills.map(({path,sha256,tree_sha256})=>({path,sha256,tree_sha256}))});
   const existing=store.getRecord(INVOCATION,key);
   if(existing){
     if(agentScope!==null)need(existing.agent_scope===agentScope&&existing.input_hash===inputHash,'NATIVE_AGENT_SCOPE_BINDING_CHANGED');
@@ -638,7 +714,12 @@ export async function runNativeAgent({store,run,role,tools,skillPaths,prompt,run
       ...clone(receipt.incomplete_continuation_audit),status:receipt.status,reason:receipt.reason??null};
     store.putRecord(INCOMPLETE_CONTINUATION,invocationRef,{...value,record_sha256:hash(value)});save();
   }
-  const event=value=>{const record={event_ref:id('native_event'),invocation_ref:invocationRef,role,...scopeBinding,at:Date.now(),...clone(value)};events.push(record);store.putRecord(EVENT,record.event_ref,record);};
+  let eventJournal;
+  const event=value=>{
+    const record=eventJournal.append({event_ref:id('native_event'),invocation_ref:invocationRef,role,...scopeBinding,
+      at:Date.now(),...(value.notification?.native_received_at?{native_received_at:value.notification.native_received_at}:{}),...clone(value)});
+    events.push(record);
+  };
   let terminalResolve,finished=false,bridge,runtime,watcher,deadlineTimer,transport,closingAcceptedOutput=false;
   const terminal=new Promise(done=>{terminalResolve=done;});
   const fail=reason=>{
@@ -647,21 +728,24 @@ export async function runNativeAgent({store,run,role,tools,skillPaths,prompt,run
     try{event({type:'PARENT_STOP_TRIGGER',reason,parent_status_before:state.status,parent_reason_before:state.reason??null});}catch{/* Preserve the original stop path if diagnostic storage fails. */}
     receipt.first_failure_reason??=reason;
     bridge?.markShutdown(reason);
-    if(openStatuses.includes(state.status))run.stop(reason,'FAILED');
-    receipt.status=run.state().status==='UNKNOWN_HOLD'?'UNKNOWN':'FAILED';receipt.reason=run.state().reason??reason;save();terminalResolve();
+    if(openStatuses.includes(state.status))run.stop(reason,
+      ['NATIVE_EVENT_LOG_PERSISTENCE_UNKNOWN','PYTHON_RPC_OUTCOME_UNKNOWN'].includes(reason)?'UNKNOWN_HOLD':'FAILED');
+    receipt.status=run.state().status==='UNKNOWN_HOLD'?'UNKNOWN':'FAILED';receipt.reason=run.state().reason??reason;receipt.failure_class=receipt.status==='UNKNOWN'?'UNKNOWN_HOLD':failureClass(receipt.first_failure_reason);save();terminalResolve();
   };
-  const complete=()=>{if(receipt.status==='PREPARED'||receipt.status==='STARTED'){receipt.status='OUTPUT_SAVED';save();terminalResolve();}};
+  const complete=()=>{if(receipt.status==='PREPARED'||receipt.status==='STARTED'){eventJournal.flush();receipt.status='OUTPUT_SAVED';save();terminalResolve();}};
   function settledAcceptedOutput(){
     const state=run.state(),own=state.attempts.filter(a=>store.getRecord(WIRE,a.request_ref)?.invocation_ref===invocationRef),batches=store.listRecords(TOOL_BATCH).filter(b=>b.invocation_ref===invocationRef);
-    return receipt.status==='OUTPUT_SAVED'&&tools.isComplete()&&openStatuses.includes(state.status)&&(!state.attempts.some(a=>a.outcome==='UNKNOWN')||tools.independentWindowCompletion===true)&&own.length>0&&own.every(a=>a.outcome==='RETURNED')&&batches.every(b=>b.calls.every(c=>c.status==='COMPLETED'));
+    return receipt.status==='OUTPUT_SAVED'&&tools.isComplete()&&openStatuses.includes(state.status)&&(!state.attempts.some(a=>a.outcome==='UNKNOWN')||tools.independentWindowCompletion===true)&&own.length>0&&own.every(a=>a.outcome==='RETURNED')&&batches.every(batchSettled);
   }
+  eventJournal=createNativeEventJournal({store,runtimeDirectory,invocationRef,
+    onError:reason=>{try{fail(reason);}catch{terminalResolve();}}});
   try{
     await onPrepared(clone(receipt));run.assertOpen();
     transport=createNativeAgentTransport({store,run,role,agentScope,invocationRef,upstream,maxFormatRepairs,allowEmptyRepairContinuation,programArgumentPolicy,toolRegistry,runtimeInputPolicy,localResourceOutput:(body,item)=>bridge?.localResourceOutput(body,item)===true,isOpen:()=>!['FAILED','UNKNOWN','SUCCEEDED','OUTPUT_SAVED'].includes(receipt.status)&&!tools.isComplete(),onFailure:fail});
     bridge=await createNativeAgentBridge({store,run,tools,definitions,transport,onComplete:complete,onFailure:fail,invocationRef,toolRegistry,skills,role,agentScope});
     const state=run.state(),remaining=localRuntimeTimeout(state);
     deadlineTimer=progressExecution(state)?setInterval(()=>{try{run.assertOpen();}catch(error){fail(error.code);}},1000):setTimeout(()=>fail('NATIVE_AGENT_DEADLINE'),remaining);
-    runtime=await runtimeFactory({runtimeDirectory,bridge,skills,model,toolOutputTokenLimit,maxFormatRepairs,maxIncompleteContinuations,localResourceFailure:notification=>bridge?.localResourceFailure(notification)===true,...(runtimeInputPolicy?{runtimeInputPolicy}:{}),...(toolRegistry?{toolRegistry}:{}),timeoutMs:remaining+2000,...(progressExecution(state)?{progressTime:()=>run.state().last_progress_at??state.created_at}:{}),onFailure:fail,...(executable?{executable}:{}),...(runtimeSelection.binding?{runtimeBinding:runtimeSelection.binding}:{})});
+    runtime=await runtimeFactory({runtimeDirectory,bridge,skills,model,toolOutputTokenLimit,maxFormatRepairs,maxIncompleteContinuations,localResourceFailure:notification=>bridge?.localResourceFailure(notification)===true||bridge?.localToolFailure(notification)===true,...(runtimeInputPolicy?{runtimeInputPolicy}:{}),...(toolRegistry?{toolRegistry}:{}),timeoutMs:remaining+2000,...(progressExecution(state)?{progressTime:()=>run.state().last_progress_at??state.created_at}:{}),onFailure:fail,...(executable?{executable}:{}),...(runtimeSelection.binding?{runtimeBinding:runtimeSelection.binding}:{})});
     receipt.runtime=clone(runtime.metadata??{kind:'SCRIPTED_OFFLINE_RUNTIME'});receipt.status='STARTED';save();
     const handle=await runtime.start({prompt,model});receipt={...receipt,transport_runtime_id:handle.runtime_id,thread_id:handle.thread_id,turn_id:handle.turn_id};save();
     if(maxIncompleteContinuations>0){receipt.turn_ids=[handle.turn_id];save();}
@@ -678,7 +762,7 @@ export async function runNativeAgent({store,run,role,tools,skillPaths,prompt,run
         if(typeof tools.finalizeNativeTurn==='function'&&nativeTurnCompletedNormally(completion,activeHandle.turn_id,activeHandle.thread_id)){
           const ledger=run.assertOpen(),own=ledger.attempts.filter(a=>store.getRecord(WIRE,a.request_ref)?.invocation_ref===invocationRef),batches=store.listRecords(TOOL_BATCH).filter(b=>b.invocation_ref===invocationRef);
           need(openStatuses.includes(ledger.status)&&(!ledger.attempts.some(a=>a.outcome==='UNKNOWN')||tools.independentWindowCompletion===true),'NATIVE_PARTIAL_PARENT_NOT_OPEN');
-          if(own.length&&own.every(a=>a.outcome==='RETURNED')&&batches.every(b=>b.calls.every(c=>c.status==='COMPLETED'))){
+          if(own.length&&own.every(a=>a.outcome==='RETURNED')&&batches.every(batchSettled)){
             const context={invocation_ref:invocationRef,request_refs:own.map(a=>a.request_ref),native_completion:{thread_id:activeHandle.thread_id,turn_id:activeHandle.turn_id,status:'completed'},reason:'NATIVE_ROLE_OUTPUT_NOT_SAVED',continuation_exhausted:!audit||audit.used>=maxIncompleteContinuations,remaining_incomplete_continuations:Math.max(0,maxIncompleteContinuations-(audit?.used??0))};
             const output=await tools.finalizeNativeTurn(clone(context));run.assertOpen();
             if(output?.complete===true&&output.saved_output===true&&tools.isComplete()){receipt.program_owned_output=true;complete();return;}
@@ -729,18 +813,31 @@ export async function runNativeAgent({store,run,role,tools,skillPaths,prompt,run
       }
     })();
     await Promise.race([terminal,watcher]);
-  }catch(error){event({type:'LOCAL_FAILURE',code:error.code??'NATIVE_AGENT_FAILED'});fail(error.code??'NATIVE_AGENT_FAILED');}
+  }catch(error){
+    try{event({type:'LOCAL_FAILURE',code:error.code??'NATIVE_AGENT_FAILED'});}
+    catch(logError){fail(logError.code??'NATIVE_EVENT_LOG_PERSISTENCE_UNKNOWN');}
+    fail(error.code??'NATIVE_AGENT_FAILED');
+  }
   finally{
+    const closingAt=performance.now();
     clearTimeout(deadlineTimer);clearInterval(deadlineTimer);
     closingAcceptedOutput=settledAcceptedOutput();
     bridge?.markShutdown(closingAcceptedOutput?'HOST_ACCEPTED_OUTPUT_SAVED':receipt.reason??run.state().reason??'HOST_ROLE_CLOSE');
     if(closingAcceptedOutput){receipt.host_shutdown={reason:'HOST_ACCEPTED_OUTPUT_SAVED',requests_settled:true,tool_batches_settled:true,started_at:Date.now()};save();}
     for(const resource of [runtime,bridge]){try{await resource?.close();}catch(error){if(!tools.isComplete())fail(error.code??'NATIVE_AGENT_CLOSE_FAILED');}}
     await watcher;
+    try{
+      for(const notification of runtime?.drainNotifications?.()??[]){
+        event({type:'RUNTIME_NOTIFICATION',notification,late_at_close:true});
+      }
+    }catch(error){fail(error.code??'NATIVE_EVENT_LOG_PERSISTENCE_UNKNOWN');}
+    try{eventJournal.close();}catch(error){fail(error.code??'NATIVE_EVENT_LOG_PERSISTENCE_UNKNOWN');}
+    receipt.event_log={...eventJournal.summary(),...(runtime?.notificationCounts?{native_notifications:runtime.notificationCounts()}: {})};
     transport?.finalize({complete:tools.isComplete()||receipt.program_partial_output===true,reason:receipt.reason});
     receipt.format_repair_audit=transport?.formatRepairState()??null;
     if(toolRegistry){receipt.tool_call_recovery_audit=transport?.toolCallRecoveryState()??null;if(receipt.tool_call_recovery_audit){receipt.provider_path='NATIVE_PROVIDER_WITH_AUDITED_TOOL_ERROR_FEEDBACK';receipt.response_byte_preserving=false;}}
     const programRecords=store.listRecords(ARGUMENT_NORMALIZATION).filter(r=>r.invocation_ref===invocationRef);if(programArgumentPolicy){receipt.program_argument_normalization=normalizationSummary(programRecords);receipt.program_argument_policy=clone(programArgumentPolicy);}if(programRecords.length){receipt.provider_path='NATIVE_PROVIDER_WITH_AUDITED_ARGUMENT_NORMALIZATION';receipt.response_byte_preserving=false;}if(typeof tools.outputStatus==='function')receipt.output_status=tools.outputStatus();
+    receipt.native_shutdown_ms=performance.now()-closingAt;
     const state=run.state();if(state.parent_status)receipt.parent_status=state.parent_status;receipt.request_refs=state.attempts.filter(attempt=>store.getRecord(WIRE,attempt.request_ref)?.invocation_ref===invocationRef).map(attempt=>attempt.request_ref);
     receipt.ended_at=Date.now();
     if(state.status==='UNKNOWN_HOLD'){receipt.status='UNKNOWN';receipt.reason=state.reason;}

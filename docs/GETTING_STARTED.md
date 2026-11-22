@@ -1,44 +1,65 @@
 # OntoWeave 安装与启动
 
-当前版本为 `v0.1.0-alpha.1`，验证目标为 macOS 本机可信单用户。Linux、Windows及企业生产部署尚未完成验收。
+`v0.2.0-alpha.1` 是面向 macOS 本机单用户的源码预览版。使用单独的本机 PostgreSQL 数据库。上一版的 SQLite 工作空间可继续用上一版打开。
 
-## 环境准备
+## 准备环境
 
 | 依赖 | 要求 |
 |---|---|
-| Node.js | `>=22.22 <23` 或 `>=24.15 <25` |
-| Rust | 使用仓库中的 `rust-toolchain.toml` |
-| Python | 3.12；解析依赖使用独立环境 |
-| Codex | 仅支持 `0.169.0-alpha.11.1`，需匹配本机协议锁 |
-
-Codex可执行程序需自行安装，本项目不分发桌面应用内二进制。无法取得上述匹配版本时，此Alpha的Agent链路不可用，不可删除或绕过运行锁。
+| Node.js | 22.22+（22.x）或 24.15+（24.x） |
+| Rust | 使用仓库中 `rust-toolchain.toml` 指定的工具链 |
+| Python | 3.12，将 API 和 Docling 安装在两个环境中 |
+| PostgreSQL | 本机 Unix socket，已安装 pgvector。验收环境使用 PostgreSQL 17.5 与 pgvector 0.8.0 |
+| Codex CLI | 本版针对 `0.171.0-alpha.13`，安装时核对本机协议 |
 
 ## 安装
 
+在解压或克隆的 OntoWeave 源码目录执行。
+
 ```sh
-git clone https://github.com/xufanghanjoker-ux/OntoWeave.git
-cd OntoWeave
+umask 077
+mkdir -p .ontoweave
 npm ci
 cargo build --locked -p lightog-core
-npm run setup
-npm run setup:runtime -- --codex=/absolute/path/to/codex
-npm start
+python3.12 -m venv .venv-pg-cq
+.venv-pg-cq/bin/python -m pip install -r requirements-pg-cq.lock -r python/ontoweave_api/requirements.lock
+npm run setup:parser -- --yes
 ```
 
-`setup`会提示安装独立Python环境与解析依赖，首次解析可能下载模型权重。`setup:runtime`生成本机协议锁，不调用模型。
+解析环境安装 Docling 和分词器，首次准备会下载所需的公开解析权重与分词数据。已有匹配版本的 Codex CLI 可直接使用。以下命令在 Apple Silicon 上将 npm 发布的 [Codex CLI 0.171.0-alpha.13](https://www.npmjs.com/package/@openai/codex/v/0.171.0-alpha.13) 安装到本项目的私有运行目录。
 
-## 配置与使用
+```sh
+npm install --prefix .ontoweave/codex-cli --no-audit --no-fund @openai/codex@0.171.0-alpha.13
+```
 
-打开 **http://127.0.0.1:4332/**，在设置中配置生成与Embedding服务，然后创建工作空间并上传资料。
+## 配置本机工作台
 
-生成服务需兼容当前Codex提供方路径；普通Chat Completions兼容不足以证明可用。现有真实生成调用使用Qwen北京服务的 `qwen3.8-flash`，其他服务与型号待验证。
+在你的 PostgreSQL 实例中创建空数据库 `ontoweave_publication_product_real`，并在该数据库启用 pgvector。连接角色需要能够创建应用 schema 和表，并读取 `pg_control_system()` 和服务器的 `data_directory` 设置，以核对启动目标实例。以下命令使用当前终端选择的本机 PostgreSQL 实例。
 
-本机配置和数据保存在 `.ontoweave/`。可以通过 `CQFORGE_PORT`、`CQFORGE_STORAGE` 指定端口和存储目录。旧LightOG/CQForge环境变量及内部标识保留兼容，旧工作空间不自动迁移。
+```sh
+createdb ontoweave_publication_product_real
+psql -d ontoweave_publication_product_real -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+```
 
-## 验证边界
+如果连接角色是专用的普通角色，由管理员把它设为这个数据库的所有者。可以授予该角色 `pg_read_all_settings`，以及当前数据库中 `pg_catalog.pg_control_system()` 的执行权。工作台使用这些权限核对连接的实例。
 
-首发副本已检查锁定npm依赖安装、Rust与前端构建、Codex协议准备、空库启动及所选6项测试；未在该副本重跑完整Python解析环境与模型权重安装，或真实模型全链路。
+```sh
+cp configs/workbench.example.json .ontoweave/workbench.json
+```
 
-抽取完整性、实体归一、事件表达及恢复体验仍在迭代。保存成功、图已显示和部分结果可读不代表知识完整或正确。见[版本说明](RELEASE_NOTES.md)。
+在 `.ontoweave/workbench.json` 填写同一实例的 Unix socket 目录、端口和数据库角色。需要数据库密码时使用 PostgreSQL 的 `.pgpass` 或 `PGPASSFILE`。随后生成本机配置和 Codex 运行锁并启动。
 
-仅用于本机可信单用户。资料、知识和诊断可能明文保存；不要公开本机端口，或提交密钥、业务资料、数据库和模型权重。见[安全说明](../SECURITY.md)。
+```sh
+npm run setup:workbench -- --config .ontoweave/workbench.json --codex "$PWD/.ontoweave/codex-cli/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/bin/codex"
+npm start -- --config .ontoweave/workbench.json
+```
+
+如果你已单独安装同版本原生二进制，使用实际路径替换上面的 `--codex` 参数。
+
+打开启动日志显示的本机工作台地址，在「设置」保存受支持的千问北京服务凭据，然后新建工作空间。当前验收配置使用 `qwen3.8-flash` 与 `qwen3.7-text-embedding-flash`，向量维度为 1024。
+
+## 验证一轮
+
+新建空间并上传一份短 Markdown。确认图谱发布后，在资料目录打开正文；从问答发起一个原文可以回答的问题，点开引用回看来源。接下来可以在同一空间追加或替换资料，核对发布后的图谱和资料目录。
+
+工作空间和确认版本保存在 PostgreSQL，运行配置、凭据及问答记录写入本机运行目录。备份或迁移时请同时保留数据库与本机运行目录。详见[安全说明](../SECURITY.md)和[版本说明](RELEASE_NOTES.md)。

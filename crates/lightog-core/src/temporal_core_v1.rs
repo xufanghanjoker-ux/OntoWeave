@@ -1,6 +1,6 @@
 //! Deterministic fact-version bitemporal semantics. No database, clock, model or I/O.
 use crate::common::{canonical_hash, error, Result};
-use chrono::{DateTime, Duration, FixedOffset, NaiveDate, NaiveDateTime, SecondsFormat, Timelike, Utc};
+use chrono::{DateTime, Duration, FixedOffset, Months, NaiveDate, NaiveDateTime, SecondsFormat, Timelike, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
@@ -112,6 +112,8 @@ pub struct FactVersion {
     pub supersedes: Option<String>,
     pub derivation: Option<EndDerivation>,
     pub succession_authority: Option<SuccessionAuthority>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub handover_predecessor: Option<String>,
     pub update_reason: String,
     #[serde(default, skip_serializing_if = "Option::is_none")] pub system: Option<SystemInterval>,
 }
@@ -134,9 +136,17 @@ pub struct Base { pub head: Head, pub versions: Vec<FactVersion>, pub support_li
 pub enum Update {
     AddFact { assertion: FactAssertion, reason: String },
     StateChange { assertion: FactAssertion, authority: Option<SuccessionAuthority>, reason: String },
+    AnchoredHandover {
+        assertion: FactAssertion,
+        target_version_id: String,
+        reason: String,
+    },
     Correct { target_version_id: String, assertion: FactAssertion, reason: String },
     Withdraw { target_version_id: String, basis: SourceRef, reason: String },
     AddSupport { target_version_id: String, source: SourceRef, reason: String },
+    WithdrawSupport { target_version_id: String, source_version_id: String, basis: SourceRef, reason: String },
+    WithdrawSupports { target_version_id: String, source_version_ids: Vec<String>, basis: SourceRef, reason: String },
+    AmendTime { target_version_id: String, valid_time: WorldTime, basis: SourceRef, reason: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -400,7 +410,7 @@ fn build_version(fact_id: String, assertion: FactAssertion, reason: String, auth
     FactVersion { fact_id, fact_version_id: String::new(), content: assertion.content,
         asserted_valid_time: assertion.valid_time.clone(), valid_time: assertion.valid_time,
         state_group: assertion.state_group, sources: assertion.sources, supersedes: None,
-        derivation: None, succession_authority: authority, update_reason: reason, system: None }
+        derivation: None, succession_authority: authority, handover_predecessor: None, update_reason: reason, system: None }
 }
 fn target<'a>(versions: &'a BTreeMap<String, FactVersion>, version_id: &str) -> Result<&'a FactVersion> {
     versions.values().find(|v| v.fact_version_id == version_id)
@@ -409,7 +419,21 @@ fn target<'a>(versions: &'a BTreeMap<String, FactVersion>, version_id: &str) -> 
 fn authority_of(fact: &FactVersion) -> Option<SuccessionAuthority> {
     fact.succession_authority.clone()
 }
-fn recompute_group(versions: &mut BTreeMap<String, FactVersion>, key: &str, warnings: &mut Vec<Warning>) {
+fn same_timeline(left: &FactVersion, right: &FactVersion) -> bool {
+    left.content.subject_ref == right.content.subject_ref
+        && left.content.predicate == right.content.predicate
+        && left.content.conditions == right.content.conditions
+        && left.content.modality == right.content.modality
+        && left.content.negated == right.content.negated
+}
+
+fn routing_successor(left: &FactVersion, right: &FactVersion) -> bool {
+    same_timeline(left, right)
+        && left.content.value != right.content.value
+        && right.handover_predecessor.as_ref().is_none_or(|predecessor| predecessor == &left.fact_id)
+}
+
+fn recompute_group(versions: &mut BTreeMap<String, FactVersion>, key: &str, warnings: &mut Vec<Warning>, preserve_explicit: bool, disputed_times: &BTreeSet<String>) {
     let mut ordered: Vec<_> = versions.values().filter(|v| group_key(v) == Some(key))
         .filter_map(|v| state_start(v).map(|t| (t, v.fact_id.clone()))).collect();
     ordered.sort();
@@ -420,25 +444,26 @@ fn recompute_group(versions: &mut BTreeMap<String, FactVersion>, key: &str, warn
     }
     for i in 0..ordered.len() {
         let (start, id) = &ordered[i];
-        let same_start = ordered.iter().filter(|(t, _)| t == start).count() > 1;
+        if disputed_times.contains(id) { continue; }
+        let relevant = |other: &str| !preserve_explicit || same_timeline(&versions[id], &versions[other]);
+        let same_start = ordered.iter().filter(|(t, other)| t == start && relevant(other)).count() > 1;
         if same_start {
             warn(warnings, "STATE_START_CONFLICT", Some(id), "Concurrent statements share the same exact state start; both remain statements");
         }
-        let Some((successor_start, successor_id)) = ordered.iter().skip(i + 1).find(|(t, _)| t > start) else { continue; };
-        if ordered.iter().filter(|(t, _)| t == successor_start).count() > 1 {
+        let Some((successor_start, successor_id)) = ordered.iter().skip(i + 1)
+            .find(|(t, other)| t > start && (!preserve_explicit || routing_successor(&versions[id], &versions[other])))
+        else { continue; };
+        if ordered.iter().filter(|(t, other)| t == successor_start && relevant(other)).count() > 1 {
             warn(warnings, "STATE_SUCCESSOR_AMBIGUOUS", Some(id), "Conflicting successors at the same start cannot supply an arbitrary end binding"); continue;
         }
+        if disputed_times.contains(successor_id) { continue; }
         let successor = &versions[successor_id];
         if authority_of(successor).is_none() {
             warn(warnings, "SUCCESSION_NOT_AUTHORIZED", Some(id), "Same group does not by itself authorize unique state succession"); continue;
         }
         // A typed group key must bind the same subject, predicate, condition scope and modality.
         let predecessor = &versions[id];
-        if predecessor.content.subject_ref != successor.content.subject_ref
-            || predecessor.content.predicate != successor.content.predicate
-            || predecessor.content.conditions != successor.content.conditions
-            || predecessor.content.modality != successor.content.modality
-            || predecessor.content.negated != successor.content.negated {
+        if !same_timeline(predecessor, successor) {
             warn(warnings, "STATE_GROUP_SCOPE_MISMATCH", Some(id), "Exact group key contains different business scope; no inferred end"); continue;
         }
         let successor_iso = successor_start.to_rfc3339_opts(SecondsFormat::AutoSi, true);
@@ -450,6 +475,10 @@ fn recompute_group(versions: &mut BTreeMap<String, FactVersion>, key: &str, warn
                     if let Some(source_end) = exact(point) {
                         if source_end <= *successor_start {
                             if source_end < *successor_start { warn(warnings, "STATE_TIMELINE_GAP", Some(id), "Explicit source end preserved before successor start"); }
+                            continue;
+                        }
+                        if preserve_explicit {
+                            warn(warnings, "SOURCE_END_SUCCESSION_CONFLICT", Some(id), "Explicit source end overlaps successor and is preserved");
                             continue;
                         }
                         warn(warnings, "SOURCE_END_SUCCESSION_CONFLICT", Some(id), "Explicit source end overlaps successor; adopted end is bounded by successor");
@@ -468,7 +497,62 @@ fn recompute_group(versions: &mut BTreeMap<String, FactVersion>, key: &str, warn
     }
 }
 
+fn routing_bounds(point: &TimePoint) -> Option<(DateTime<Utc>, DateTime<Utc>)> {
+    let value = point.value.as_deref()?;
+    let (date, months) = match point.precision {
+        Precision::Day => (NaiveDate::parse_from_str(value, "%Y-%m-%d").ok()?, 0),
+        Precision::Month => (NaiveDate::parse_from_str(&format!("{value}-01"), "%Y-%m-%d").ok()?, 1),
+        Precision::Year => (NaiveDate::parse_from_str(&format!("{value}-01-01"), "%Y-%m-%d").ok()?, 12),
+        _ => return point_bounds(point),
+    };
+    let end = if months == 0 { date.succ_opt()? } else { date.checked_add_months(Months::new(months))? };
+    // Coarse calendar dates have no UTC instant. Widen by a full day at
+    // each boundary so an unstated offset cannot decide a close comparison.
+    Some((date.pred_opt()?.and_hms_opt(0, 0, 0)?.and_utc(),
+          end.succ_opt()?.and_hms_opt(0, 0, 0)?.and_utc()))
+}
+
+fn apply_coarse_handovers(versions: &mut BTreeMap<String, FactVersion>, key: &str, warnings: &mut Vec<Warning>,
+                          disputed_times: &BTreeSet<String>) {
+    let mut candidates = BTreeMap::<String, Vec<(TimePoint, String)>>::new();
+    for successor in versions.values().filter(|fact| group_key(fact) == Some(key)) {
+        let Some(predecessor_id) = successor.handover_predecessor.as_ref() else { continue; };
+        if disputed_times.contains(&successor.fact_id) || disputed_times.contains(predecessor_id) { continue; }
+        let Some(predecessor) = versions.get(predecessor_id) else { continue; };
+        if group_key(predecessor) != Some(key) || !routing_successor(predecessor, successor) { continue; }
+        let WorldTime::State { start: Some(next), .. } = &successor.asserted_valid_time else { continue; };
+        let WorldTime::State { start: Some(old), end, .. } = &predecessor.asserted_valid_time else { continue; };
+        if exact(next).is_some() && exact(old).is_some() { continue; }
+        let Some((_, latest_old)) = routing_bounds(old) else { continue; };
+        let Some((earliest_next, latest_next)) = routing_bounds(next) else { continue; };
+        if latest_old >= earliest_next || !matches!(end, TimeEnd::OpenAsReported) { continue; }
+        if predecessor.derivation.is_some() {
+            let WorldTime::State { end: TimeEnd::Exact { point }, .. } = &predecessor.valid_time else { continue; };
+            if routing_bounds(point).is_none_or(|(earliest, _)| earliest < latest_next) { continue; }
+        }
+        candidates.entry(predecessor_id.clone()).or_default().push((next.clone(), successor.fact_id.clone()));
+    }
+    for (id, options) in candidates {
+        if options.len() != 1 {
+            warn(warnings, "STATE_SUCCESSOR_AMBIGUOUS", Some(&id), "Multiple anchored successors leave the earlier state unresolved");
+            continue;
+        }
+        let (point, successor_fact_id) = options.into_iter().next().unwrap();
+        let predecessor = versions.get_mut(&id).unwrap();
+        if let WorldTime::State { end, .. } = &mut predecessor.valid_time {
+            predecessor.derivation = Some(EndDerivation {
+                successor_fact_id, successor_start: point.value.clone().unwrap(), authority: SuccessionAuthority::ExplicitHandover,
+            });
+            *end = TimeEnd::Exact { point };
+        }
+    }
+}
+
 pub fn prepare_change_set(request: PrepareRequest) -> Result<ChangeSet> {
+    prepare(request, false, &BTreeSet::new())
+}
+
+fn prepare(request: PrepareRequest, preserve_explicit: bool, disputed_times: &BTreeSet<String>) -> Result<ChangeSet> {
     required(&request.request_id, "request_id")?; required(&request.library_id, "library_id")?;
     let mut originals = BTreeMap::new();
     let mut version_ids = BTreeSet::new();
@@ -495,9 +579,24 @@ pub fn prepare_change_set(request: PrepareRequest) -> Result<ChangeSet> {
     let mut recalculate = BTreeSet::new();
     let mut touched = BTreeSet::new();
     let mut withdrawal = BTreeMap::new();
+    let mut support_rewrites = BTreeSet::new();
     let mut add_supports = vec![];
     let mut warnings = vec![];
     for (index, update) in request.updates.iter().cloned().enumerate() {
+        let mut handover_predecessor = None;
+        let update = match update {
+            Update::AnchoredHandover { assertion, target_version_id, reason } => {
+                let old = target(&originals, &target_version_id)?;
+                if assertion.state_group.as_ref().map(|group| group.key.as_str()) != group_key(old) {
+                    return Err(bad("TEMPORAL_HANDOVER_SCOPE_MISMATCH", "Handover target is in a different group"));
+                }
+                handover_predecessor = Some(old.fact_id.clone());
+                Update::StateChange { assertion, authority: Some(SuccessionAuthority::ExplicitHandover), reason }
+            }
+            Update::WithdrawSupport { target_version_id, source_version_id, basis, reason } =>
+                Update::WithdrawSupports { target_version_id, source_version_ids: vec![source_version_id], basis, reason },
+            other => other,
+        };
         let unauthorized_change = matches!(&update, Update::StateChange { authority: None, .. });
         match update {
             Update::AddFact { mut assertion, reason } | Update::StateChange { mut assertion, authority: None, reason } => {
@@ -520,13 +619,14 @@ pub fn prepare_change_set(request: PrepareRequest) -> Result<ChangeSet> {
             Update::StateChange { mut assertion, authority: Some(authority), reason } => {
                 required(&reason, "reason")?; normalize_assertion(&mut assertion, &mut warnings)?;
                 let fact_id = generated_id("fact", &json!([request.library_id, request.request_id, index]));
-                let version = build_version(fact_id.clone(), assertion, reason, Some(authority.clone()));
+                let mut version = build_version(fact_id.clone(), assertion, reason, Some(authority.clone()));
+                version.handover_predecessor = handover_predecessor;
                 if authority == SuccessionAuthority::OntologySingleValue && !version.state_group.as_ref().is_some_and(|g| g.single_valued) {
                     return Err(bad("TEMPORAL_SUCCESSION_AUTHORITY_INVALID", "Ontology authority requires an explicit single-valued group"));
                 }
                 if let Some(key) = group_key(&version) {
                     affected.insert(key.into());
-                    if state_start(&version).is_some() { recalculate.insert(key.into()); }
+                    if state_start(&version).is_some() || version.handover_predecessor.is_some() { recalculate.insert(key.into()); }
                     else { warn(&mut warnings, "STATE_START_UNRESOLVED", Some(&fact_id), "State change needs an exact state start before succession"); }
                 } else { warn(&mut warnings, "STATE_GROUP_REQUIRED", Some(&fact_id), "State change has no exact group; retained independently"); }
                 working.insert(fact_id, version);
@@ -554,6 +654,7 @@ pub fn prepare_change_set(request: PrepareRequest) -> Result<ChangeSet> {
                 }
                 if let Some(key) = group_key(&old) { affected.insert(key.into()); recalculate.insert(key.into()); }
                 let mut version = build_version(old.fact_id.clone(), assertion, reason, old.succession_authority.clone());
+                version.handover_predecessor = old.handover_predecessor;
                 version.supersedes = Some(old.fact_version_id);
                 if let Some(key) = group_key(&version) { affected.insert(key.into()); recalculate.insert(key.into()); }
                 working.insert(version.fact_id.clone(), version);
@@ -565,6 +666,74 @@ pub fn prepare_change_set(request: PrepareRequest) -> Result<ChangeSet> {
                 if let Some(key) = group_key(old) { affected.insert(key.into()); recalculate.insert(key.into()); }
                 withdrawal.insert(old.fact_version_id.clone(), (reason, basis)); working.remove(&old.fact_id);
             }
+            Update::WithdrawSupports { target_version_id, source_version_ids, basis, reason } => {
+                required(&reason, "reason")?;
+                validate_source(&basis)?;
+                let old = target(&originals, &target_version_id)?;
+                if !touched.insert(old.fact_id.clone()) {
+                    return Err(bad("TEMPORAL_MULTIPLE_TARGET_UPDATES", "Only one revision per fact in a batch"));
+                }
+                let mut version = old.clone();
+                for link in request.base.support_links.iter().filter(|link| link.fact_version_id == target_version_id) {
+                    if !version.sources.contains(&link.source) { version.sources.push(link.source.clone()); }
+                }
+                if source_version_ids.is_empty() || !source_version_ids.iter().all(|id|
+                    version.sources.iter().any(|source| source.role == SourceRole::Support && &source.source_version_id == id)) {
+                    return Err(bad("TEMPORAL_SUPPORT_TARGET_NOT_CURRENT", "Support unavailable on the current version"));
+                }
+                version.sources.retain(|source| source.role != SourceRole::Support || !source_version_ids.contains(&source.source_version_id));
+                for update in &request.updates {
+                    let Update::AddSupport { target_version_id: target, source, .. } = update else { continue; };
+                    if target == &target_version_id && source.role == SourceRole::Support {
+                        if source_version_ids.contains(&source.source_version_id) {
+                            return Err(bad("TEMPORAL_SUPPORT_CONTRADICTORY_UPDATE", "The same source is added and withdrawn"));
+                        }
+                        if !version.sources.contains(source) { version.sources.push(source.clone()); }
+                    }
+                }
+                support_rewrites.insert(target_version_id.clone());
+                if let Some(key) = group_key(old) {
+                    affected.insert(key.into());
+                    recalculate.insert(key.into());
+                }
+                if version.sources.iter().any(|source| source.role == SourceRole::Support) {
+                    let mut background = basis.clone();
+                    background.role = SourceRole::Background;
+                    if !version.sources.contains(&background) { version.sources.push(background); }
+                    version.update_reason = reason;
+                    working.insert(old.fact_id.clone(), version);
+                } else {
+                    withdrawal.insert(target_version_id, (reason, basis));
+                    working.remove(&old.fact_id);
+                }
+            }
+            Update::AmendTime { target_version_id, mut valid_time, basis, reason } => {
+                required(&reason, "reason")?;
+                validate_source(&basis)?;
+                if basis.kind != SourceKind::HumanRevision || basis.role != SourceRole::Support {
+                    return Err(bad("TEMPORAL_CORRECTION_BASIS_REQUIRED", "A time amendment requires human supporting evidence"));
+                }
+                let old = target(&originals, &target_version_id)?;
+                if !touched.insert(old.fact_id.clone()) {
+                    return Err(bad("TEMPORAL_MULTIPLE_TARGET_UPDATES", "Only one revision per fact in a batch"));
+                }
+                normalize_world(&mut valid_time, &mut warnings)?;
+                let mut version = old.clone();
+                for link in request.base.support_links.iter().filter(|link| link.fact_version_id == target_version_id) {
+                    if !version.sources.contains(&link.source) { version.sources.push(link.source.clone()); }
+                }
+                if !version.sources.contains(&basis) { version.sources.push(basis); }
+                version.valid_time = valid_time.clone();
+                version.asserted_valid_time = valid_time;
+                version.derivation = None;
+                version.update_reason = reason;
+                if let Some(key) = group_key(old) {
+                    affected.insert(key.into());
+                    recalculate.insert(key.into());
+                }
+                working.insert(old.fact_id.clone(), version);
+            }
+            Update::AnchoredHandover { .. } | Update::WithdrawSupport { .. } => unreachable!("normalized update"),
             Update::AddSupport { target_version_id, source, reason } => {
                 required(&reason, "reason")?; validate_source(&source)?;
                 if source.role != SourceRole::Support { return Err(bad("TEMPORAL_SOURCE_ROLE_INVALID", "New support must have SUPPORT role")); }
@@ -581,7 +750,22 @@ pub fn prepare_change_set(request: PrepareRequest) -> Result<ChangeSet> {
             }
         }
     }
-    for key in &recalculate { recompute_group(&mut working, key, &mut warnings); }
+    for fact in working.values().filter(|fact| disputed_times.contains(&fact.fact_id)) {
+        if let Some(key) = group_key(fact) {
+            affected.insert(key.into());
+            recalculate.insert(key.into());
+        }
+    }
+    for key in &recalculate {
+        if preserve_explicit {
+            for fact in working.values_mut().filter(|fact| group_key(fact) == Some(key)) {
+                fact.valid_time = fact.asserted_valid_time.clone();
+                fact.derivation = None;
+            }
+        }
+        recompute_group(&mut working, key, &mut warnings, preserve_explicit, disputed_times);
+        if preserve_explicit { apply_coarse_handovers(&mut working, key, &mut warnings, disputed_times); }
+    }
     let mut new_versions = vec![];
     let mut close_versions = vec![];
     for (id, mut version) in working {
@@ -612,7 +796,21 @@ pub fn prepare_change_set(request: PrepareRequest) -> Result<ChangeSet> {
     for (fact_version_id, (reason, basis)) in withdrawal {
         close_versions.push(CloseVersion { fact_version_id, reason, basis: Some(basis) });
     }
-    // Supporting an exact version that this batch also supersedes would be immediately invisible.
+    // In a routing batch, a source can arrive alongside an inferred end.
+    // Only timeline derivations preserve the assertion being supported.
+    if preserve_explicit {
+        for support in &mut add_supports {
+            if let Some(next) = new_versions.iter().find(|v| v.supersedes.as_deref() == Some(&support.fact_version_id)
+                && (v.update_reason == "RECOMPUTE_STATE_TIMELINE" || support_rewrites.contains(&support.fact_version_id))) {
+                support.fact_version_id = next.fact_version_id.clone();
+                support.support_link_id = generated_id("support", &json!([request.library_id, support.fact_version_id, support.source]));
+            }
+        }
+        add_supports.retain(|link| !new_versions.iter().any(|version|
+            version.fact_version_id == link.fact_version_id && version.sources.contains(&link.source)));
+        add_supports.sort_by(|a, b| a.support_link_id.cmp(&b.support_link_id));
+        add_supports.dedup_by(|a, b| a.support_link_id == b.support_link_id);
+    }
     if add_supports.iter().any(|s| close_versions.iter().any(|c| c.fact_version_id == s.fact_version_id)) {
         return Err(bad("TEMPORAL_SUPPORT_TARGET_SUPERSEDED", "Add support in a separate batch after correction/withdrawal"));
     }
@@ -627,9 +825,10 @@ pub fn prepare_change_set(request: PrepareRequest) -> Result<ChangeSet> {
 
 #[derive(PartialEq)]
 enum Match { Supported, Possible, Excluded }
-fn interval_match(start: Option<&TimePoint>, end: Option<&TimePoint>, open_as_reported: bool, at: DateTime<Utc>) -> (Match, &'static str) {
-    let start = start.and_then(point_bounds);
-    let end = end.and_then(point_bounds);
+fn interval_match(start: Option<&TimePoint>, end: Option<&TimePoint>, open_as_reported: bool, at: DateTime<Utc>,
+                  bounds: fn(&TimePoint) -> Option<(DateTime<Utc>, DateTime<Utc>)>) -> (Match, &'static str) {
+    let start = start.and_then(bounds);
+    let end = end.and_then(bounds);
     if start.is_some_and(|(earliest, _)| at < earliest) { return (Match::Excluded, "BEFORE_INTERVAL_START"); }
     if end.is_some_and(|(_, latest)| at >= latest) { return (Match::Excluded, "AT_OR_AFTER_INTERVAL_END"); }
     let definite_start = start.is_some_and(|(_, latest)| at >= latest);
@@ -637,7 +836,8 @@ fn interval_match(start: Option<&TimePoint>, end: Option<&TimePoint>, open_as_re
     if definite_start && definite_end { (Match::Supported, "WITHIN_ALL_COMPATIBLE_INTERVALS") }
     else { (Match::Possible, "INTERVAL_BOUNDARY_UNRESOLVED") }
 }
-fn world_match(time: &WorldTime, at: &TimePoint) -> (Match, &'static str) {
+fn world_match(time: &WorldTime, at: &TimePoint, routing: bool) -> (Match, &'static str) {
+    let bounds = if routing { routing_bounds } else { point_bounds };
     let Some(at) = exact(at) else { return (Match::Possible, "QUERY_TIME_UNRESOLVED"); };
     match time {
         WorldTime::Timeless { .. } => (Match::Supported, "TIMELESS_EXPLICIT"),
@@ -646,23 +846,27 @@ fn world_match(time: &WorldTime, at: &TimePoint) -> (Match, &'static str) {
             Some(t) if t == at => (Match::Supported, "EVENT_AT_INSTANT"),
             Some(_) => (Match::Excluded, "EVENT_OTHER_INSTANT"),
             None => {
-                if let Some((earliest, latest)) = point_bounds(occurred_at) {
+                if let Some((earliest, latest)) = bounds(occurred_at) {
                     if at < earliest || at >= latest { return (Match::Excluded, "EVENT_OUTSIDE_PRECISION_RANGE"); }
                 }
                 (Match::Possible, "EVENT_TIME_UNRESOLVED")
             }
         },
-        WorldTime::Window { start, end } => interval_match(Some(start), Some(end), false, at),
+        WorldTime::Window { start, end } => interval_match(Some(start), Some(end), false, at, bounds),
         WorldTime::State { start, end } => {
             match end {
-                TimeEnd::Exact { point } => interval_match(start.as_ref(), Some(point), false, at),
-                TimeEnd::OpenAsReported => interval_match(start.as_ref(), None, true, at),
-                TimeEnd::Unknown => interval_match(start.as_ref(), None, false, at),
+                TimeEnd::Exact { point } => interval_match(start.as_ref(), Some(point), false, at, bounds),
+                TimeEnd::OpenAsReported => interval_match(start.as_ref(), None, true, at, bounds),
+                TimeEnd::Unknown => interval_match(start.as_ref(), None, false, at, bounds),
             }
         }
     }
 }
-pub fn select_fact_versions(mut request: SelectRequest) -> Result<Selection> {
+pub fn select_fact_versions(request: SelectRequest) -> Result<Selection> {
+    select_versions(request, false)
+}
+
+fn select_versions(mut request: SelectRequest, routing: bool) -> Result<Selection> {
     if let Some(at) = &mut request.at { normalize_point(at, &mut vec![]); }
     let mut result = Selection::default();
     let mut selected_ids = BTreeSet::new();
@@ -685,13 +889,177 @@ pub fn select_fact_versions(mut request: SelectRequest) -> Result<Selection> {
             validate_system(system)?;
             if system_visible(system, request.selected_seq) && !sources.contains(&link.source) { sources.push(link.source.clone()); }
         }
-        let (status, reason) = request.at.as_ref().map(|at| world_match(&version.valid_time, at)).unwrap_or((Match::Supported, "WORLD_TIME_NOT_FILTERED"));
+        let (status, reason) = request.at.as_ref().map(|at| world_match(&version.valid_time, at, routing)).unwrap_or((Match::Supported, "WORLD_TIME_NOT_FILTERED"));
         let selected = SelectedFact { fact: version, sources, reasons: vec![reason.into()] };
         match status { Match::Supported => result.supported.push(selected), Match::Possible => result.possible.push(selected), Match::Excluded => result.excluded.push(selected) }
     }
     for group in [&mut result.supported, &mut result.possible, &mut result.excluded] { group.sort_by(|a,b| a.fact.fact_version_id.cmp(&b.fact.fact_version_id)); }
     Ok(result)
 }
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RoutingRequest {
+    prepare: PrepareRequest,
+    groups: BTreeMap<String, ComparisonPolicy>,
+    #[serde(default)]
+    base_time_alternatives: BTreeMap<String, Vec<WorldTime>>,
+    #[serde(default)]
+    update_time_alternatives: BTreeMap<usize, Vec<WorldTime>>,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ComparisonPolicy {
+    #[serde(default)]
+    unique_subject: bool,
+    #[serde(default)]
+    unique_object: bool,
+    #[serde(default)]
+    exclusive_values: Vec<Vec<Value>>,
+}
+
+// A collision is definite only when both assertions guarantee that they apply
+// at a common time. A missing boundary alone cannot create a review.
+fn guaranteed_interval(time: &WorldTime) -> Option<(DateTime<Utc>, Option<DateTime<Utc>>)> {
+    let (start, end) = match time {
+        WorldTime::State { start: Some(start), end: TimeEnd::OpenAsReported } => (start, None),
+        WorldTime::State { start: Some(start), end: TimeEnd::Exact { point } } => (start, Some(point)),
+        WorldTime::Window { start, end } => (start, Some(end)),
+        _ => return None,
+    };
+    let (_, start) = routing_bounds(start)?;
+    let end = match end {
+        Some(point) => Some(routing_bounds(point)?.0),
+        None => None,
+    };
+    if end.is_some_and(|end| end <= start) { return None; }
+    Some((start, end))
+}
+
+fn definite_overlap(left: &WorldTime, right: &WorldTime) -> bool {
+    match (left, right) {
+        (WorldTime::Timeless { .. }, WorldTime::Timeless { .. }) => return true,
+        (WorldTime::Timeless { .. }, other) | (other, WorldTime::Timeless { .. }) =>
+            return guaranteed_interval(other).is_some()
+                || matches!(other, WorldTime::Event { occurred_at } if exact(occurred_at).is_some()),
+        (WorldTime::Event { occurred_at }, other) | (other, WorldTime::Event { occurred_at }) =>
+            return exact(occurred_at).is_some() && world_match(other, occurred_at, true).0 == Match::Supported,
+        _ => (),
+    }
+    let Some((a_start, a_end)) = guaranteed_interval(left) else { return false; };
+    let Some((b_start, b_end)) = guaranteed_interval(right) else { return false; };
+    a_end.is_none_or(|end| b_start < end) && b_end.is_none_or(|end| a_start < end)
+}
+
+fn disagreement(left: &FactContent, right: &FactContent, policy: &ComparisonPolicy) -> Option<&'static str> {
+    if left.predicate != right.predicate || left.conditions != right.conditions || left.modality != right.modality {
+        return None;
+    }
+    let same_subject = left.subject_ref == right.subject_ref;
+    let same_value = left.value == right.value;
+    if same_subject && same_value && left.negated != right.negated {
+        return Some("OPPOSITE_POLARITY");
+    }
+    if left.negated || right.negated { return None; }
+    if policy.unique_subject && same_subject && !same_value { return Some("SINGLE_VALUE"); }
+    if policy.unique_object && same_value && !same_subject { return Some("INVERSE_UNIQUE"); }
+    if same_subject && !same_value && policy.exclusive_values.iter().any(|values| values.contains(&left.value) && values.contains(&right.value)) {
+        return Some("MUTUALLY_EXCLUSIVE");
+    }
+    None
+}
+
+fn possible_interval(time: &WorldTime) -> Option<(DateTime<Utc>, Option<DateTime<Utc>>)> {
+    let (start, end) = match time {
+        WorldTime::State { start: Some(start), end: TimeEnd::OpenAsReported } => (start, None),
+        WorldTime::State { start: Some(start), end: TimeEnd::Exact { point } } => (start, Some(point)),
+        WorldTime::Window { start, end } => (start, Some(end)),
+        _ => return None,
+    };
+    let (start, _) = routing_bounds(start)?;
+    let end = match end {
+        Some(point) => Some(routing_bounds(point)?.1),
+        None => None,
+    };
+    if end.is_some_and(|end| end <= start) { return None; }
+    Some((start, end))
+}
+
+fn definite_separation(left: &WorldTime, right: &WorldTime) -> bool {
+    if let WorldTime::Event { occurred_at } = left {
+        return exact(occurred_at).is_some() && world_match(right, occurred_at, true).0 == Match::Excluded;
+    }
+    if let WorldTime::Event { occurred_at } = right {
+        return exact(occurred_at).is_some() && world_match(left, occurred_at, true).0 == Match::Excluded;
+    }
+    let Some((a_start, a_end)) = possible_interval(left) else { return false; };
+    let Some((b_start, b_end)) = possible_interval(right) else { return false; };
+    a_end.is_some_and(|end| end <= b_start) || b_end.is_some_and(|end| end <= a_start)
+}
+
+fn alternative_overlap(left: &FactVersion, right: &FactVersion,
+                       alternatives: &BTreeMap<String, Vec<WorldTime>>) -> bool {
+    let possible = |fact: &FactVersion| alternatives.get(&fact.fact_id).into_iter().flatten();
+    let mut conflict = false;
+    let mut separate = false;
+    for a in std::iter::once(&left.valid_time).chain(possible(left)) {
+        for b in std::iter::once(&right.valid_time).chain(possible(right)) {
+            conflict |= definite_overlap(a, b);
+            separate |= definite_separation(a, b);
+        }
+    }
+    conflict && separate
+}
+
+fn prepare_routing(request: RoutingRequest) -> Result<Value> {
+    let updates: Vec<_> = request.prepare.updates.iter().enumerate().map(|(index, update)| {
+        match update {
+            Update::AddFact { .. } | Update::StateChange { .. } | Update::AnchoredHandover { .. } =>
+                Ok(generated_id("fact", &json!([request.prepare.library_id, request.prepare.request_id, index]))),
+            Update::Correct { target_version_id, .. } | Update::AmendTime { target_version_id, .. }
+            | Update::Withdraw { target_version_id, .. } | Update::WithdrawSupport { target_version_id, .. }
+            | Update::WithdrawSupports { target_version_id, .. } | Update::AddSupport { target_version_id, .. } =>
+                request.prepare.base.versions.iter().find(|version| &version.fact_version_id == target_version_id)
+                    .map(|version| version.fact_id.clone())
+                    .ok_or_else(|| bad("TEMPORAL_TARGET_NOT_CURRENT", format!("Exact current version unavailable: {target_version_id}"))),
+        }
+    }).collect::<Result<Vec<_>>>()?;
+    let mut alternatives = request.base_time_alternatives;
+    for (index, times) in request.update_time_alternatives {
+        let id = updates.get(index).ok_or_else(|| bad("TEMPORAL_ALTERNATIVE_TARGET_INVALID", "Alternative update index unavailable"))?;
+        if times.is_empty() { alternatives.remove(id); }
+        else { alternatives.insert(id.clone(), times); }
+    }
+    let disputes = alternatives.keys().cloned().collect();
+    let plan = prepare(request.prepare.clone(), true, &disputes)?;
+    let mut groups = BTreeMap::<&str, Vec<&FactVersion>>::new();
+    for version in request.prepare.base.versions.iter().filter(|version| !plan.close_versions.iter()
+        .any(|closed| closed.fact_version_id == version.fact_version_id)).chain(plan.new_versions.iter()) {
+        if let Some(key) = group_key(version) { groups.entry(key).or_default().push(version); }
+    }
+    let mut conflicts = vec![];
+    let default_policy = ComparisonPolicy::default();
+    for (key, mut facts) in groups {
+        let policy = request.groups.get(key).unwrap_or(&default_policy);
+        facts.sort_by_key(|fact| &fact.fact_id);
+        for (index, left) in facts.iter().enumerate() {
+            for right in &facts[index + 1..] {
+                let Some(reason) = disagreement(&left.content, &right.content, policy) else { continue; };
+                let code = if (alternatives.contains_key(&left.fact_id) || alternatives.contains_key(&right.fact_id))
+                    && alternative_overlap(left, right, &alternatives) {
+                    "TIME_INTERPRETATION_CONFLICT"
+                } else if definite_overlap(&left.valid_time, &right.valid_time) { reason }
+                else { continue; };
+                conflicts.push(json!({"group_key": key, "code": code,
+                    "fact_refs": [left.fact_id, right.fact_id],
+                    "fact_version_refs": [left.fact_version_id, right.fact_version_id]}));
+            }
+        }
+    }
+    Ok(json!({"rule_version": "ontoweave-fact-routing-rust/1", "plan": plan,
+        "update_fact_refs": updates, "conflicts": conflicts}))
+}
+
 fn decode<T: for<'a> Deserialize<'a>>(value: &Value) -> Result<T> {
     serde_json::from_value(value.clone()).map_err(|e| bad("TEMPORAL_INPUT_INVALID", e.to_string()))
 }
@@ -700,9 +1068,19 @@ fn encode<T: Serialize>(value: T) -> Result<Value> {
 }
 pub fn execute(operation: &str, payload: &Value) -> Result<Value> {
     match operation {
+        "prepare_fact_routing" => prepare_routing(decode(payload)?),
+        "normalize_routing_times" => {
+            let inputs: Vec<Value> = decode(payload)?;
+            let results: Vec<_> = inputs.iter().map(|item| match decode(item).and_then(normalize_time) {
+                Ok(result) => json!({"time": result.times.first(), "warnings": result.warnings}),
+                Err(error) => json!({"error": error.code}),
+            }).collect();
+            encode(results)
+        }
         "normalize_time" => encode(normalize_time(decode(payload)?)?),
         "prepare_change_set" => encode(prepare_change_set(decode(payload)?)?),
         "select_fact_versions" => encode(select_fact_versions(decode(payload)?)?),
+        "select_routed_fact_versions" => encode(select_versions(decode(payload)?, true)?),
         _ => Err(bad("CORE_OPERATION_UNKNOWN", operation)),
     }
 }

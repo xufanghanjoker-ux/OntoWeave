@@ -9,7 +9,7 @@ from pathlib import Path
 from importlib.metadata import version
 
 root = Path(__file__).resolve().parent.parent
-out = root / 'local-runs' / 'parser-fixtures'
+out = root / '.ontoweave' / 'parser-fixtures'
 out.mkdir(parents=True, exist_ok=True)
 
 
@@ -20,7 +20,7 @@ def fixtures():
              'This synthetic provider does not claim medical support.']
     # Earlier RapidOCR releases cached checkpoints inside site-packages. Copy, do not move.
     legacy_ocr = Path(find_spec('rapidocr').origin).parent / 'models'
-    pinned_ocr = root / 'local-runs' / 'docling-models' / 'ocr-pinned'
+    pinned_ocr = root / '.ontoweave' / 'docling-models' / 'ocr-pinned'
     for name in ['PP-OCRv6_det_small.onnx', 'ch_ppocr_mobile_v2.0_cls_mobile.onnx', 'PP-OCRv6_rec_small.onnx', 'ppocrv6_dict.txt']:
         if (legacy_ocr / name).is_file() and not (pinned_ocr / name).exists():
             pinned_ocr.mkdir(parents=True, exist_ok=True)
@@ -50,7 +50,7 @@ def fixtures():
 if __name__ == '__main__':
     if '--download' in sys.argv:
         from docling.utils.model_downloader import download_models
-        artifacts = root / 'local-runs' / 'docling-models' / 'artifacts'
+        artifacts = root / '.ontoweave' / 'docling-models' / 'artifacts'
         download_models(output_dir=artifacts, force='--force' in sys.argv, with_layout=True, with_tableformer=True, with_code_formula=False,
                         with_picture_classifier=False, with_smolvlm=False, with_granitedocling=False,
                         with_smoldocling=False, with_granite_vision=False, with_rapidocr=True)

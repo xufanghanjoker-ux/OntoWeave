@@ -12,6 +12,11 @@ export function nativeQueryScope(reader){
   const scope=reader.scope();
   const scalarKeys=['view_ref','activation_ref','activation_seq','activated_at','at','temporal_view_sha256','history_capability','graph_capability','library_id','build_run_id','library_revision_ref','graph_revision_ref','publication_commit_ref','publication_confirmation_ref','source_snapshot_ref','source_epoch','manifest_ref','source_current','source_capability','fact_capability','identity_policy','adoption_revision_ref','source_index_revision','fact_index_revision','reader_manifest_ref','source_index_coverage'];
   const result=Object.fromEntries(scalarKeys.filter(key=>scope[key]!==undefined).map(key=>{const value=scope[key];need(value===null||['string','boolean'].includes(typeof value)||typeof value==='number'&&Number.isFinite(value),'NATIVE_QUERY_SCOPE_SCALAR_INVALID');return [key,value];}));
+  if(scope.query_read_view!==undefined){
+    const v=scope.query_read_view;
+    need(v?.library_ref===scope.library_id&&v.business_manifest_ref===scope.manifest_ref&&v.view_revision===scope.view_ref&&!Object.hasOwn(v,'authorization_scope'),'QUERY_PG_VIEW_INVALID');
+    result.query_read_view=clone(v);
+  }
   if(scope.temporal_selection!==undefined){const t=scope.temporal_selection;need(t&&typeof t==='object'&&!Array.isArray(t)&&Object.keys(t).every(k=>['at','as_of'].includes(k))&&(t.at===null||typeof t.at==='string'),'NATIVE_QUERY_TEMPORAL_SCOPE_INVALID');result.temporal_selection=clone(t);}
   if(scope.as_of!==undefined){const a=scope.as_of;need(a===null||a&&typeof a==='object'&&!Array.isArray(a)&&Object.keys(a).length===1&&(Number.isSafeInteger(a.activation_seq)&&a.activation_seq>0||typeof a.timestamp==='string'),'NATIVE_QUERY_TEMPORAL_SCOPE_INVALID');result.as_of=clone(a);}
   if(scope.embedding_spaces!==undefined){need(Array.isArray(scope.embedding_spaces),'NATIVE_QUERY_EMBEDDING_SPACES_INVALID');result.embedding_spaces=scope.embedding_spaces.map(space=>Object.fromEntries(['space_ref','model','revision','dimensions','input_strategy','distance','normalization','config_revision'].filter(key=>space[key]!==undefined).map(key=>[key,clone(space[key])])));}

@@ -1,6 +1,6 @@
 # CQForge 单人本地工作台
 
-> 最新安装与操作入口为 [本地 alpha](../docs/local-alpha.md)。默认 SQLite；Node22.22+或24.15+、Python3.12。先 `npm ci`、`npm run setup`，再 `npm start`。node:sqlite尚非正式稳定API。
+> 本页记录此前 SQLite 工作台的实现。安装新版 PostgreSQL 工作台请使用[安装与启动指南](../docs/GETTING_STARTED.md)。
 
 原生 HTML/CSS/JavaScript 前端与 Node.js 实验服务。使用根目录 package.json 锁定官方 Neo4j 驱动，不需要前端构建。只监听 `127.0.0.1`，不包含团队权限，不应转发到公网。
 

@@ -4,8 +4,8 @@ import {assessLearning,admissionFingerprint} from './learning-admission.mjs';
 import {intentDisposition} from './query-intent.mjs';
 import {openAnswerStream} from './answer-stream.mjs';
 /** Loopback-only prototype server. Model credentials stay in this process, never on disk. */
-import { createServer } from 'node:http';
-import { readFileSync, writeFileSync, renameSync, mkdirSync, readdirSync, existsSync, unlinkSync } from 'node:fs';
+import { createServer, request as httpRequest } from 'node:http';
+import { readFileSync, writeFileSync, renameSync, mkdirSync, readdirSync, existsSync, unlinkSync, realpathSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { resolve, relative } from 'node:path';
 import { randomUUID, randomBytes, createHash } from 'node:crypto';
@@ -60,6 +60,7 @@ import {createSourceCore} from './source-core-client-v1.mjs';
 import {prepareProductInput,prepareProductDraft} from './product-input-v1.mjs';
 import {createTemporalQueryReaderPort} from './native-query-temporal-reader-v2.mjs';
 import {createNativeQueryProduct} from './native-query-product-v1.mjs';
+import {registerPgQuery} from './ontoweave-pg-query-registration-v1.mjs';
 import {createNativeQueryHttp} from './native-query-http-v1.mjs';
 import {createNativeExtractedQueryReader} from './native-query-extracted-reader-v1.mjs';
 import {createProductDocumentCatalog} from './document-catalog-v1.mjs';
@@ -82,6 +83,174 @@ const stageLabels = { DRAFT: '修订草稿 · 尚未发送模型', queued: '等�
   schema_review: 'Evaluator · 评审本体', extraction: 'Extractor · 抽取声明', claims_review: 'Evaluator · 复核声明',
   READY: '可查询 · shadow版本', REVIEW_REQUIRED: '待处理 · 未通过门禁', PAUSED:'调用额度用完 · 已暂停', FAILED: '执行失败', INTERRUPTED: '服务重启 · 任务中断', CANCELLED: '任务已停止' };
 const idPattern = /^[a-f0-9-]{36}$/;
+
+const WORKBENCH_ASSETS = { '/': ['index.html', 'text/html'], '/app.mjs': ['app.mjs', 'text/javascript'], '/style.css': ['style.css', 'text/css'], '/lightog.css':['lightog.css','text/css'],
+        '/ontoweave-pg-api-v1.mjs':['ontoweave-pg-api-v1.mjs','text/javascript'],
+        '/ontoweave-pg-workspace-v1.mjs':['ontoweave-pg-workspace-v1.mjs','text/javascript'],
+        '/ontoweave-pg-workspace-v1.css':['ontoweave-pg-workspace-v1.css','text/css'],
+        '/lightog-memory-client-v1.mjs':['lightog-memory-client-v1.mjs','text/javascript'],
+        '/lightog-memory-current-view-v1.mjs':['lightog-memory-current-view-v1.mjs','text/javascript'],
+        '/lightog-memory-view-v1.mjs':['lightog-memory-view-v1.mjs','text/javascript'],
+        '/lightog-contextual-memory-v1.mjs':['lightog-contextual-memory-v1.mjs','text/javascript'],
+        '/lightog-memory-workspace-v1.mjs':['lightog-memory-workspace-v1.mjs','text/javascript'],
+        '/source-first':['source-first.html','text/html'], '/source-first-app.mjs':['source-first-app.mjs','text/javascript'], '/source-first.css':['source-first.css','text/css'],
+        '/product-library-ui-v1.mjs':['product-library-ui-v1.mjs','text/javascript'],
+        '/lightog-workspace-v1.mjs':['lightog-workspace-v1.mjs','text/javascript'],
+        '/lightog-workspace-view-v1.mjs':['lightog-workspace-view-v1.mjs','text/javascript'],
+        '/lightog-correction-view-v1.mjs':['lightog-correction-view-v1.mjs','text/javascript'],
+        '/lightog-workspace-v1.css':['lightog-workspace-v1.css','text/css'],
+        '/lightog-chat-workspace-v1.mjs':['lightog-chat-workspace-v1.mjs','text/javascript'],
+        '/lightog-chat-client-v1.mjs':['lightog-chat-client-v1.mjs','text/javascript'],
+        '/lightog-chat-view-v1.mjs':['lightog-chat-view-v1.mjs','text/javascript'],
+        '/lightog-chat-v1.css':['lightog-chat-v1.css','text/css'],
+        '/assets/lightog-chat-markdown-v1.mjs':['assets/lightog-chat-markdown-v1.mjs','text/javascript'],
+        '/assets/CHAT_MARKDOWN_THIRD_PARTY_LICENSES.txt':['assets/CHAT_MARKDOWN_THIRD_PARTY_LICENSES.txt','text/plain'],
+        '/lightog-reading-data-v1.mjs':['lightog-reading-data-v1.mjs','text/javascript'],
+        '/lightog-pending-classification-v1.mjs':['lightog-pending-classification-v1.mjs','text/javascript'],
+        '/lightog-current-view-contract-v1.mjs':['lightog-current-view-contract-v1.mjs','text/javascript'],
+        '/lightog-temporal-display-v1.mjs':['lightog-temporal-display-v1.mjs','text/javascript'],
+        '/lightog-library-review-ui-v1.mjs':['lightog-library-review-ui-v1.mjs','text/javascript'],
+        '/lightog-navigation-v1.mjs':['lightog-navigation-v1.mjs','text/javascript'],
+        '/lightog-graph-filter-v1.mjs':['lightog-graph-filter-v1.mjs','text/javascript'],
+        '/lightog-upload-v1.mjs':['lightog-upload-v1.mjs','text/javascript'],
+        '/lightog-query-ui-v1.mjs':['lightog-query-ui-v1.mjs','text/javascript'],
+        '/lightog-query-citations-v1.mjs':['lightog-query-citations-v1.mjs','text/javascript'],
+        '/native-domain-graph-data-v1.mjs':['native-domain-graph-data-v1.mjs','text/javascript'],
+        '/native-build-workbench-data-v1.mjs':['native-build-workbench-data-v1.mjs','text/javascript'],
+        '/native-build-workbench-view-v1.mjs':['native-build-workbench-view-v1.mjs','text/javascript'],
+        '/native-build-workbench-v1.css':['native-build-workbench-v1.css','text/css'],
+        '/native-domain-graph-workbench-v1.css':['native-domain-graph-workbench-v1.css','text/css'],
+        '/assets/graph-view.mjs':['assets/graph-view.mjs','text/javascript'],
+        '/assets/graph-fa2-worker-v1.mjs':['assets/graph-fa2-worker-v1.mjs','text/javascript'],
+        '/assets/graph-fa2-worker-v1.mjs.LEGAL.txt':['assets/graph-fa2-worker-v1.mjs.LEGAL.txt','text/plain'],
+        '/assets/graph-view.mjs.LEGAL.txt':['assets/graph-view.mjs.LEGAL.txt','text/plain'],
+        '/assets/THIRD_PARTY_LICENSES.txt':['assets/THIRD_PARTY_LICENSES.txt','text/plain'],
+        '/fonts/geist-latin-wght-normal.woff2':['fonts/geist-latin-wght-normal.woff2','font/woff2'],
+        '/fonts/manrope-latin-wght-normal.woff2':['fonts/manrope-latin-wght-normal.woff2','font/woff2'] };
+
+function serveWorkbenchAsset(req, res, pathname, assets = WORKBENCH_ASSETS) {
+  if (req.method !== 'GET' || !Object.hasOwn(assets, pathname)) return false;
+  const [name, mime] = assets[pathname];
+  const bytes = readFileSync(resolve(webRoot, name));
+  res.writeHead(200, { 'Content-Type': mime + '; charset=utf-8', 'Cache-Control': 'no-store',
+    'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'",
+    'X-Content-Type-Options': 'nosniff' });
+  res.end(bytes);
+  return true;
+}
+
+function unifiedAssets() {
+  const assets = { ...WORKBENCH_ASSETS, '/': ['unified-workbench-v2.html', 'text/html'] };
+  const approved = JSON.parse(readFileSync(resolve(webRoot, 'unified-workbench-v2.assets.json'), 'utf8'));
+  if (!Array.isArray(approved)) throw Error('UNIFIED_WORKBENCH_ASSET_MANIFEST_INVALID');
+  const root = realpathSync(webRoot) + '/';
+  for (const filename of approved) {
+    if (typeof filename !== 'string' || !/^(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_-]+\.(?:mjs|css)$/.test(filename) ||
+        Object.hasOwn(assets, '/' + filename) || !realpathSync(resolve(webRoot, filename)).startsWith(root)) {
+      throw Error('UNIFIED_WORKBENCH_ASSET_MANIFEST_INVALID');
+    }
+    assets['/' + filename] = [filename, filename.endsWith('.css') ? 'text/css' : 'text/javascript'];
+  }
+  return assets;
+}
+
+export function createPGWorkbench(config, writeToken) {
+  const endpoint = new URL(config.api_origin);
+  if (endpoint.protocol !== 'http:' || endpoint.hostname !== '127.0.0.1' ||
+      endpoint.username || endpoint.password || endpoint.pathname !== '/' || endpoint.search || endpoint.hash) {
+    throw Error('ONTOWEAVE_PG_API_MUST_BE_LOOPBACK');
+  }
+  const dynamic = Boolean(config.workspace_registry);
+  const assets = config.unified_workbench_v2 ? unifiedAssets() : WORKBENCH_ASSETS;
+  const libraries = (config.libraries ?? []).map(({library_ref, title, backend}) => {
+    if (backend !== 'PG' || typeof library_ref !== 'string' || !library_ref || typeof title !== 'string')
+      throw Error('ONTOWEAVE_PG_REGISTRY_INVALID');
+    return {library_ref, title};
+  });
+  const registry = new Set(libraries.map(row => row.library_ref));
+  if (registry.size !== libraries.length || (!dynamic && config.default_library_ref != null && !registry.has(config.default_library_ref)) || !writeToken) {
+    throw Error('ONTOWEAVE_PG_REGISTRY_INVALID');
+  }
+  const descriptor = {libraries, default_library_ref:config.default_library_ref, ...(config.query ? {query_enabled:true} : {})};
+  const registryRead = async path => {
+    const response = await fetch(new URL(path, endpoint), {redirect:'error', signal:AbortSignal.timeout(10000),
+      headers:{Accept:'application/json', 'X-Ontoweave-Write-Token':writeToken}});
+    const data = await response.json();
+    return {response,data};
+  };
+  const authorizeLibrary = async (library, action) => {
+    if (!dynamic) return registry.has(library);
+    const {response,data} = await registryRead('/_ontoweave/libraries/' + encodeURIComponent(library));
+    return response.ok && data.library_ref === library && data.query_registered === true &&
+      (action !== 'ask' || (data.workspace_state !== 'ARCHIVED' && data.model_ready !== false));
+  };
+  const send = (res, status, body) => {
+    res.writeHead(status, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
+    res.end(JSON.stringify(body));
+  };
+  const reject = (res, status, code) => send(res, status, {error:{
+    code, message:code, retryable:false, request_ref:null, details:{}
+  }});
+  const pgQuery = registerPgQuery({query:config.query, endpoint, writeToken, authorizeLibrary, json:send,
+    rotatingCredential:config.model_settings_enabled === true});
+  const server = createServer(async (req, res) => {
+    const {port} = server.address();
+    const hosts = [`127.0.0.1:${port}`, `localhost:${port}`];
+    if (!hosts.includes(req.headers.host)) return reject(res, 403, 'LOCAL_HOST_REQUIRED');
+    try {
+      const requested = new URL(req.url, 'http://127.0.0.1');
+      const path = requested.pathname;
+      if (pgQuery && await pgQuery.handle({req,res,pathname:path})) return;
+      if (path === '/api/bootstrap' && req.method === 'GET') {
+        if (!dynamic) return send(res, 200, {ontoweave_pg:descriptor});
+        try {
+          const {response,data} = await registryRead('/api/v1/libraries');
+          if (!response.ok) return reject(res, 503, 'PG_API_UNAVAILABLE');
+          return send(res, 200, {ontoweave_pg:{...descriptor, libraries:data.items,
+            default_library_ref:data.default_library_ref, create_enabled:data.create_enabled,
+            client_contract:'ontoweave-workbench-client/2'}});
+        } catch { return reject(res, 503, 'PG_API_UNAVAILABLE'); }
+      }
+      if (path === '/api/v1/openapi.json' || path === '/api/v1/libraries' || path === '/api/v1/models' ||
+          path.startsWith('/api/v1/libraries/')) {
+        if (!['GET','POST'].includes(req.method)) return reject(res, 405, 'METHOD_NOT_ALLOWED');
+        const match = /^\/api\/v1\/libraries\/([^/]+)\//.exec(path);
+        if (path.startsWith('/api/v1/libraries/') && (!match || (!dynamic && !registry.has(decodeURIComponent(match[1])))))
+          return reject(res, 404, 'LIBRARY_NOT_FOUND');
+        const sameOrigin = req.headers.origin === 'http://' + req.headers.host;
+        if ((req.headers.origin && !sameOrigin) || (req.method === 'POST' && !sameOrigin))
+          return reject(res, 403, 'SAME_ORIGIN_REQUIRED');
+        const headers = {};
+        for (const name of ['accept','content-type','content-length','last-event-id','x-request-id']) {
+          if (req.headers[name] !== undefined) headers[name] = req.headers[name];
+        }
+        if (req.method === 'POST') headers['x-ontoweave-write-token'] = writeToken;
+        const upstream = httpRequest(endpoint, {method:req.method, path:path + requested.search, headers}, (reply) => {
+          const responseHeaders = {};
+          for (const name of ['content-type','cache-control','x-accel-buffering','content-disposition','x-content-type-options']) {
+            if (reply.headers[name] !== undefined) responseHeaders[name] = reply.headers[name];
+          }
+          res.writeHead(reply.statusCode, responseHeaders);
+          res.flushHeaders();
+          reply.on('error', () => res.destroy());
+          reply.pipe(res);
+        });
+        upstream.on('error', () => {
+          if (res.headersSent) res.destroy();
+          else reject(res, 503, 'PG_API_UNAVAILABLE');
+        });
+        res.on('close', () => upstream.destroy());
+        req.pipe(upstream);
+        return;
+      }
+      if (!serveWorkbenchAsset(req, res, path, assets)) reject(res, 404, 'NOT_FOUND');
+    } catch (error) {
+      reject(res, error instanceof URIError ? 400 : 404, error instanceof URIError ? 'PATH_INVALID' : 'NOT_FOUND');
+    }
+  });
+  if (pgQuery) server.once('close', () => { void pgQuery.close(); });
+  return server;
+}
 
 export function createWorkbench({ provider = null, profile = {}, storage = resolve(root, 'local-runs', 'workbench'), port = 4317,
   graphConnector = connectGraph, acceptance = false, instance = randomUUID(), control = randomBytes(32).toString('hex'), sourceFirstOptions = null } = {}) {
@@ -1372,53 +1541,7 @@ export function createWorkbench({ provider = null, profile = {}, storage = resol
           return json(res, 200, { ...await graph.query(job, body.cq_id), task_id: job.id, version: job.id });
         }
       }
-      // Exact UI assets only; backend/Skill/fixture files are never static assets.
-      const assets = { '/': ['index.html', 'text/html'], '/app.mjs': ['app.mjs', 'text/javascript'], '/style.css': ['style.css', 'text/css'], '/lightog.css':['lightog.css','text/css'],
-        '/lightog-memory-client-v1.mjs':['lightog-memory-client-v1.mjs','text/javascript'],
-        '/lightog-memory-current-view-v1.mjs':['lightog-memory-current-view-v1.mjs','text/javascript'],
-        '/lightog-memory-view-v1.mjs':['lightog-memory-view-v1.mjs','text/javascript'],
-        '/lightog-contextual-memory-v1.mjs':['lightog-contextual-memory-v1.mjs','text/javascript'],
-        '/lightog-memory-workspace-v1.mjs':['lightog-memory-workspace-v1.mjs','text/javascript'],
-        '/source-first':['source-first.html','text/html'], '/source-first-app.mjs':['source-first-app.mjs','text/javascript'], '/source-first.css':['source-first.css','text/css'],
-        '/product-library-ui-v1.mjs':['product-library-ui-v1.mjs','text/javascript'],
-        '/lightog-workspace-v1.mjs':['lightog-workspace-v1.mjs','text/javascript'],
-        '/lightog-workspace-view-v1.mjs':['lightog-workspace-view-v1.mjs','text/javascript'],
-        '/lightog-correction-view-v1.mjs':['lightog-correction-view-v1.mjs','text/javascript'],
-        '/lightog-workspace-v1.css':['lightog-workspace-v1.css','text/css'],
-        '/lightog-chat-workspace-v1.mjs':['lightog-chat-workspace-v1.mjs','text/javascript'],
-        '/lightog-chat-client-v1.mjs':['lightog-chat-client-v1.mjs','text/javascript'],
-        '/lightog-chat-view-v1.mjs':['lightog-chat-view-v1.mjs','text/javascript'],
-        '/lightog-chat-v1.css':['lightog-chat-v1.css','text/css'],
-        '/assets/lightog-chat-markdown-v1.mjs':['assets/lightog-chat-markdown-v1.mjs','text/javascript'],
-        '/assets/CHAT_MARKDOWN_THIRD_PARTY_LICENSES.txt':['assets/CHAT_MARKDOWN_THIRD_PARTY_LICENSES.txt','text/plain'],
-        '/lightog-reading-data-v1.mjs':['lightog-reading-data-v1.mjs','text/javascript'],
-        '/lightog-pending-classification-v1.mjs':['lightog-pending-classification-v1.mjs','text/javascript'],
-        '/lightog-current-view-contract-v1.mjs':['lightog-current-view-contract-v1.mjs','text/javascript'],
-        '/lightog-temporal-display-v1.mjs':['lightog-temporal-display-v1.mjs','text/javascript'],
-        '/lightog-library-review-ui-v1.mjs':['lightog-library-review-ui-v1.mjs','text/javascript'],
-        '/lightog-navigation-v1.mjs':['lightog-navigation-v1.mjs','text/javascript'],
-        '/lightog-graph-filter-v1.mjs':['lightog-graph-filter-v1.mjs','text/javascript'],
-        '/lightog-upload-v1.mjs':['lightog-upload-v1.mjs','text/javascript'],
-        '/lightog-query-ui-v1.mjs':['lightog-query-ui-v1.mjs','text/javascript'],
-        '/lightog-query-citations-v1.mjs':['lightog-query-citations-v1.mjs','text/javascript'],
-        '/native-domain-graph-data-v1.mjs':['native-domain-graph-data-v1.mjs','text/javascript'],
-        '/native-build-workbench-data-v1.mjs':['native-build-workbench-data-v1.mjs','text/javascript'],
-        '/native-build-workbench-view-v1.mjs':['native-build-workbench-view-v1.mjs','text/javascript'],
-        '/native-build-workbench-v1.css':['native-build-workbench-v1.css','text/css'],
-        '/native-domain-graph-workbench-v1.css':['native-domain-graph-workbench-v1.css','text/css'],
-        '/assets/graph-view.mjs':['assets/graph-view.mjs','text/javascript'],
-        '/assets/graph-fa2-worker-v1.mjs':['assets/graph-fa2-worker-v1.mjs','text/javascript'],
-        '/assets/graph-fa2-worker-v1.mjs.LEGAL.txt':['assets/graph-fa2-worker-v1.mjs.LEGAL.txt','text/plain'],
-        '/assets/graph-view.mjs.LEGAL.txt':['assets/graph-view.mjs.LEGAL.txt','text/plain'],
-        '/assets/THIRD_PARTY_LICENSES.txt':['assets/THIRD_PARTY_LICENSES.txt','text/plain'],
-        '/fonts/geist-latin-wght-normal.woff2':['fonts/geist-latin-wght-normal.woff2','font/woff2'],
-        '/fonts/manrope-latin-wght-normal.woff2':['fonts/manrope-latin-wght-normal.woff2','font/woff2'] };
-      if (req.method === 'GET' && assets[pathname]) {
-        const [name, mime] = assets[pathname];
-        res.writeHead(200, { 'Content-Type': mime + '; charset=utf-8', 'Cache-Control': 'no-store',
-          'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'",
-          'X-Content-Type-Options': 'nosniff' }); return res.end(readFileSync(resolve(webRoot, name)));
-      }
+      if (serveWorkbenchAsset(req, res, pathname)) return;
       return json(res, 404, { error: '路径不存在' });
     } catch (error) { return json(res, error.status|| (error.code?.startsWith('BUDGET_') ? 428 : 400), { error: error.message, code:error.code || null }); }
   });

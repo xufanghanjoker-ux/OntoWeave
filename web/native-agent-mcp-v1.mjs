@@ -2,6 +2,7 @@
 import {createInterface} from 'node:readline';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
+import {toolDoesNotStop,toolOutcome} from './native-tool-outcomes-v1.mjs';
 import {randomUUID} from 'node:crypto';
 
 export function createNativeAgentMCPSession({definitions,call,resourceCall=null,onFailure=async()=>{},instructions=null}) {
@@ -48,8 +49,9 @@ export function createNativeAgentMCPSession({definitions,call,resourceCall=null,
     try {
       const value=await call(message.params.name,message.params.arguments??{},
         {mcp_session_ref:sessionRef,mcp_request_id:message.id});
-      if(value?.ok===false)await stop('NATIVE_MCP_TOOL_REJECTED');
-      return reply({content:[{type:'text',text:JSON.stringify(value)}],structuredContent:value,isError:value?.ok===false});
+      const isError=!toolDoesNotStop(toolOutcome(value));
+      if(isError)await stop(value.error?.code??'NATIVE_MCP_TOOL_REJECTED');
+      return reply({content:[{type:'text',text:JSON.stringify(value)}],structuredContent:value,isError});
     } catch {
       await stop('NATIVE_MCP_BRIDGE_FAILED');
       return reply({content:[{type:'text',text:'{"ok":false,"error":{"code":"NATIVE_MCP_BRIDGE_FAILED"}}'}],isError:true});

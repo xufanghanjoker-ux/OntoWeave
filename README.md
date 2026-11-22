@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/xufanghanjoker-ux/OntoWeave/releases/tag/v0.1.0-alpha.1"><img alt="Release v0.1.0-alpha.1" src="https://img.shields.io/badge/release-v0.1.0--alpha.1-244b36?style=flat-square" /></a>
+  <a href="https://github.com/xufanghanjoker-ux/OntoWeave/releases"><img alt="GitHub 发行版本" src="https://img.shields.io/github/v/release/xufanghanjoker-ux/OntoWeave?include_prereleases&style=flat-square" /></a>
   <a href="LICENSE"><img alt="License Apache 2.0" src="https://img.shields.io/badge/license-Apache--2.0-244b36?style=flat-square" /></a>
 </p>
 
@@ -65,19 +65,20 @@ OntoWeave 是一个开源世界模型项目。我们围绕本体、双时态与�
 
 | 能力 | 体验 |
 |---|---|
+| **维护工作空间** | 新建、切换、重命名工作空间，追加或替换资料，从目录打开原文。 |
 | **从资料建立知识** | 上传资料，发现知识需求，组织对象、关系与属性。 |
 | **探索图谱与本体** | 查看知识之间的联系，并回查对应资料。 |
 | **带依据的对话** | 流式回答、Markdown、句内引用与原文预览。 |
-| **保留变化的历史** | 事实版本、现实变化、认识更正与双时间读取基础。 |
+| **保留变化的历史** | 纠正知识后更新图谱与检索索引，回看历史版本和已保存的引用。 |
 
-底层采用原生 Codex Agent 与 Skill，结合 Rust 时态内核和本机存储。
+底层采用原生 Codex Agent 与 Skill，结合 Rust 时态内核及 PostgreSQL 和 pgvector。
 
-> **当前版本：v0.1.0-alpha.1。** 面向 macOS 本机单用户验证；抽取与实体归一质量仍在迭代。行动反馈闭环、外部 Agent MCP 接入及预测尚未完成交付。详见[版本说明](docs/RELEASE_NOTES.md)。
+> **v0.2.0-alpha.1 源码预览版**面向 macOS 本机单用户。抽取与实体归一质量仍在迭代。行动反馈闭环、外部 Agent MCP 接入及预测仍在建设。详见[版本说明](docs/RELEASE_NOTES.md)。
 
 ## 开始使用
 
 1. 按[安装与启动指南](docs/GETTING_STARTED.md)准备本机环境并启动 OntoWeave。
-2. 在设置中配置生成与 Embedding 服务，创建工作空间并上传资料。
+2. 在设置中保存受支持的模型服务凭据，创建工作空间并上传资料。
 3. 探索图谱、提出问题，从引用回到原文。
 
 ## 接下来的方向

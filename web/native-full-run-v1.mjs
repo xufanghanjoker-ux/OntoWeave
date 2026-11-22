@@ -72,7 +72,7 @@ export function createNativeFullRun({store, runId = id('full_run'), input, limit
       need(['GENERATION', 'EMBEDDING'].includes(kind) && typeof role === 'string' && role.length > 0, 'NATIVE_REQUEST_ROLE_INVALID');
       const pending = value.attempts.filter(a => a.outcome === 'RESERVED');
       const parallel = ['WINDOWED_EXTRACTION_V1','HYBRID_EXTRACTION_V1'].includes(value.input.extraction_window_policy?.version);
-      const parallelCQ = value.input.cq_chunk_policy?.version === 'DOCLING_HYBRID_CQ_V1';
+      const parallelCQ = ['DOCLING_HYBRID_CQ_V1','DOCLING_STRUCTURE_CQ_V2'].includes(value.input.cq_chunk_policy?.version);
       if (agentScope !== null) need(typeof agentScope === 'string' && agentScope.length > 0, 'NATIVE_REQUEST_SCOPE_INVALID');
       if ((parallel && role === 'EXTRACTION' || parallelCQ && role === 'CQ') && kind === 'GENERATION' && agentScope) {
         need(pending.every(a => a.kind === 'GENERATION' && a.role === role && a.agent_scope && a.agent_scope !== agentScope), 'NATIVE_RUN_CONCURRENT_REQUEST_FORBIDDEN');
@@ -130,12 +130,12 @@ export function createNativeFullRun({store, runId = id('full_run'), input, limit
   function completeDiscovery(summary) {
     return store.transaction(() => {
       const value = assertOpen();
-      need(value.input.stop_after === 'FAMILY', 'NATIVE_DISCOVERY_ONLY_SCOPE_REQUIRED');
+      need(['CQ','FAMILY'].includes(value.input.stop_after), 'NATIVE_DISCOVERY_ONLY_SCOPE_REQUIRED');
       need(value.attempts.every(a => a.outcome === 'RETURNED'), 'NATIVE_UNSETTLED_REQUEST');
-      need(value.attempts.every(a => a.kind === 'GENERATION' && ['CQ','FAMILY'].includes(a.role)), 'NATIVE_DISCOVERY_ONLY_ROLE_VIOLATION');
-      need(value.checkpoints.some(c => ['CQ_SAVED','CQ_IMPORTED_CONFIRMED'].includes(c.stage)) && value.checkpoints.some(c => c.stage === 'FAMILIES_SAVED'), 'NATIVE_DISCOVERY_CHECKPOINTS_REQUIRED');
+      need(value.attempts.every(a => a.kind === 'GENERATION' && (value.input.stop_after==='CQ'?['CQ']:['CQ','FAMILY']).includes(a.role)), 'NATIVE_DISCOVERY_ONLY_ROLE_VIOLATION');
+      need(value.checkpoints.some(c => ['CQ_SAVED','CQ_IMPORTED_CONFIRMED'].includes(c.stage)) && (value.input.stop_after==='CQ'||value.checkpoints.some(c => c.stage === 'FAMILIES_SAVED')), 'NATIVE_DISCOVERY_CHECKPOINTS_REQUIRED');
       value.status = summary?.partial ? 'PARTIALLY_READY' : 'SUCCEEDED';
-      value.summary = {...clone(summary),completion_scope:'CQ_FAMILY_ONLY',knowledge_built:false,readback_verified:false};
+      value.summary = {...clone(summary),completion_scope:value.input.stop_after==='CQ'?'CQ_ONLY':'CQ_FAMILY_ONLY',knowledge_built:false,readback_verified:false};
       value.ended_at = now();save(value);return clone(value);
     });
   }
