@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve, relative, isAbsolute, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -35,11 +35,4 @@ export function parserHealth({ base = project, python = parserPython(), checkPac
     }
     return { status: 'READY', tested_at: manifest.at, docling: manifest.docling, files: manifest.files.length };
   } catch { return { status: 'INCOMPLETE_CACHE', remedy: '模型缺失或初始化中断；运行 npm run setup:parser' }; }
-}
-export function doctor({ storage = resolve(project, 'local-runs/workbench'), deep = false } = {}) {
-  const python = spawnSync(parserPython(), ['-c', 'import sys;print(".".join(map(str,sys.version_info[:2])))'], { encoding: 'utf8', timeout: 10000 });
-  return { node: { version: process.versions.node, supported: supportedNode() },
-    python: { version: python.stdout?.trim() || null, supported: python.stdout?.trim() === '3.12' },
-    storage, parser: parserHealth(), deep, model_calls: 0,
-    instructions: { node: 'https://nodejs.org/en/download', python: 'https://www.python.org/downloads/' } };
 }

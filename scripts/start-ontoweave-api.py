@@ -34,6 +34,7 @@ from ontoweave_publication.runtime import isolated_pg, verify_pg
 from ontoweave_publication.readers import Reader
 from ontoweave_publication.store import digest, head, require
 from ontoweave_product.registry import WorkspaceRegistry, migrate_registry, require_active
+from ontoweave_query_sessions import QuerySessionStore, migrate as migrate_query_sessions
 
 
 def apply_waiting(directory, stop):
@@ -232,7 +233,13 @@ def main():
             store.retrieval_preparer = PublicationIndex(store, client=embedding_client,
                                                        segment_codepoints=segment_codepoints)
         prepared_stores.add(db_path)
-    app = create_app({}, actor=config["actor_ref"], write_token=token, directory=directory, model_settings=model_settings)
+    sessions = None
+    if query:
+        session_database = product.store if product else directory.get(default or names[0])["store"]
+        migrate_query_sessions(session_database)
+        sessions = QuerySessionStore(session_database)
+    app = create_app({}, actor=config["actor_ref"], write_token=token, directory=directory,
+                     model_settings=model_settings, query_sessions=sessions)
 
     @asynccontextmanager
     async def lifespan(_app):

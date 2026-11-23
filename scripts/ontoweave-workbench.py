@@ -25,7 +25,7 @@ import psycopg
 ROOT = Path(__file__).resolve().parents[1]
 STATE = ROOT / ".ontoweave"
 PINS = ROOT / "contracts/workbench-runtime-v1"
-SOURCE_MANIFEST_SHA256 = "057b933f96c70315976bdad9e4b11eb8ee6986a4298fc91da8465dd41d07b20c"
+SOURCE_MANIFEST_SHA256 = "c41a2ce660d2d7f4ebd5ed362a29bc02fbee943990c0b91de93e469cff54aafb"
 MATERIAL_SHA256 = "8307c47f7d20dc321f5bec14f67c1d774bfa3a0aa09ab032111864ec71adcc91"
 TOKENIZER_SHA256 = "223921b76ee99bde995b7ff738513eef100fb51d18c93597a113bcffe865b2a7"
 GENERATION = {

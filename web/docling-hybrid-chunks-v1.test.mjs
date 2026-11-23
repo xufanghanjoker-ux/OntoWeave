@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {execFileSync,spawnSync} from 'node:child_process';
 import {createHash,randomUUID} from 'node:crypto';
-import {mkdtempSync,mkdirSync,readFileSync,writeFileSync,rmSync,cpSync} from 'node:fs';
+import {existsSync,mkdtempSync,mkdirSync,readFileSync,writeFileSync,rmSync,cpSync} from 'node:fs';
 import {resolve,join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {fileURLToPath} from 'node:url';
@@ -13,8 +13,11 @@ import {hash} from './cq-discovery-store-v2.mjs';
 const ROOT=fileURLToPath(new URL('../',import.meta.url));
 const python=resolve(ROOT,'.venv-docling312/bin/python');
 const sha=value=>createHash('sha256').update(value).digest('hex');
+const tokenizerCache=process.env.TIKTOKEN_CACHE_DIR ?? resolve(ROOT,'.ontoweave/docling-models/tiktoken');
+const tokenizerEnv={...process.env,TIKTOKEN_CACHE_DIR:tokenizerCache};
 const available=spawnSync(python,['-c','import tiktoken,semchunk; from docling_core.transforms.chunker.hybrid_chunker import HybridChunker'],{stdio:'ignore'}).status===0;
-const options={skip:!available&&'Docling/tiktoken local environment unavailable'};
+const cached=existsSync(resolve(tokenizerCache,'9b5ad71b2ce5302211f9c61530b329a4922fc6a4'));
+const options={skip:(!available||!cached)&&'Run npm run setup:parser to prepare Docling and the tokenizer cache'};
 const fixtureCode=String.raw`
 import json,sys
 from docling_core.types.doc import DoclingDocument,DocItemLabel,TableData,TableCell
@@ -74,7 +77,7 @@ test('HybridChunker uses real cl100k tokens at 8000, including Chinese text far 
     assert.equal(plan.summary.represented_blocks,plan.summary.source_blocks);
     assert.equal(plan.gaps.length,0);assert.equal(plan.model_calls,0);
     const exact=JSON.parse(execFileSync(python,['-c','import json,sys,tiktoken; e=tiktoken.get_encoding("cl100k_base"); print(json.dumps([len(e.encode(t)) for t in json.load(sys.stdin)]))'],
-      {input:JSON.stringify(plan.chunks.map(c=>c.contextualized_text)),encoding:'utf8',env:{...process.env,TIKTOKEN_CACHE_DIR:resolve(ROOT,'local-runs/docling-models/tiktoken')}}));
+      {input:JSON.stringify(plan.chunks.map(c=>c.contextualized_text)),encoding:'utf8',env:tokenizerEnv}));
     assert.deepEqual(plan.chunks.map(c=>c.token_count),exact);
     assert.ok(plan.chunks.every(c=>c.serialization_status==='DOCLING_RESERIALIZED_NOT_EXACT_FLAT_TEXT_SPANS'&&!Object.hasOwn(c,'start')));
     assert.ok(plan.windows.every(w=>w.token_count<=8000&&w.source_chunk_refs.length>0));
@@ -167,7 +170,7 @@ for target in (5000,5001):
  assert ''.join(u['text'] for c in chunks for u in c['units']).replace(' ','')==text.replace(' ','')
  results.append({'target':target,'blocks':len(chunks),'tokens':[c['token_count'] for c in chunks]})
 print(json.dumps(results))
-`],{cwd:ROOT,encoding:'utf8',env:{...process.env,TIKTOKEN_CACHE_DIR:resolve(ROOT,'local-runs/docling-models/tiktoken')}});
+`],{cwd:ROOT,encoding:'utf8',env:tokenizerEnv});
  const rows=JSON.parse(result);assert.equal(rows[0].blocks,1);assert.equal(rows[0].tokens[0],5000);assert(rows[1].blocks>1);
 });
 
@@ -179,9 +182,9 @@ test('structure v2 long paragraph fragments preserve all characters and source o
 });
 
 test('offline composition: retained Docling -> processing blocks -> CQ save -> frozen range readback',options,async()=>{
- const {createStore}=await import('./store.mjs'),{createNativeFullRun}=await import('./native-full-run-v1.mjs');
+ const {createRecordStore}=await import('../tests/fixtures/record-store.mjs'),{createNativeFullRun}=await import('./native-full-run-v1.mjs');
  const {runNativeChunkedCQ,readNativeCQMaterials}=await import('./native-chunked-cq-v1.mjs');
- const f=fixture('headings'),store=createStore(join(f.directory,'store'));
+ const f=fixture('headings'),store=createRecordStore();
  try{const plan=await createDoclingHybridChunkPlan(f),runId='offline-composition',parent=createNativeFullRun({store,runId,input:{},limits:{max_generation_requests:1,max_wall_ms:60000}});let calls=0;
  const result=await runNativeChunkedCQ({store,catalog:{get:()=>f.snapshot,isCurrent:()=>true},libraryId:'offline',snapshotId:f.snapshot.snapshot_id,runId,parentRun:parent,plan,runtimeDirectory:join(f.directory,'runtime'),skillPaths:[],upstream:()=>assert.fail('offline only'),
   agentRunner:async args=>{calls++;const req=args.run.reserve({kind:'GENERATION',role:'CQ',agentScope:args.agentScope});args.run.settle(req.request_ref,{outcome:'RETURNED'});
@@ -189,7 +192,7 @@ test('offline composition: retained Docling -> processing blocks -> CQ save -> f
    await args.tools.call('lightog_save_cq_list',{items:[{question:'规则3适用于什么对象？',ranges:[{start:label,end:label}]}]});return {receipt:{status:'SUCCEEDED',outcome:'RETURNED'}};
   }});
  assert.equal(calls,1);assert.equal(result.scan_status,'COMPLETE');const read=readNativeCQMaterials({store,runId,cqRef:result.cq_input.items[0].cq_ref});assert.equal(read.units.length,1);assert(read.text.includes('本节独立规则3'));assert(read.text.includes('章节3'));
- }finally{store.close();f.dispose();}
+ }finally{f.dispose();}
 });
 
 for(const mode of ['large-table','wide-table'])test('structure v2 '+mode+' preserves every cell, row identity, caption and footnote under 5000',options,async()=>{
@@ -199,7 +202,7 @@ for(const mode of ['large-table','wide-table'])test('structure v2 '+mode+' prese
  if(mode==='large-table')for(let row=1;row<=480;row++)assert(units.some(u=>u.text.includes('主体'+String(row).padStart(3,'0'))),'row '+row);
  else for(let row=1;row<=80;row++)for(let col=0;col<20;col++)assert(units.some(u=>u.text.includes('CELL'+String(row).padStart(3,'0')+'C'+String(col).padStart(2,'0'))),'cell '+row+'/'+col);
  assert(p.windows.every(w=>w.token_count<=5000));
- const tokens=JSON.parse(execFileSync(python,['-c','import sys,json,tiktoken;e=tiktoken.get_encoding("cl100k_base");print(json.dumps([len(e.encode(t)) for t in json.load(sys.stdin)]))'],{input:JSON.stringify(p.windows.map(w=>w.text)),encoding:'utf8',env:{...process.env,TIKTOKEN_CACHE_DIR:resolve(ROOT,'local-runs/docling-models/tiktoken')}}));assert.deepEqual(tokens,p.windows.map(w=>w.token_count));
+ const tokens=JSON.parse(execFileSync(python,['-c','import sys,json,tiktoken;e=tiktoken.get_encoding("cl100k_base");print(json.dumps([len(e.encode(t)) for t in json.load(sys.stdin)]))'],{input:JSON.stringify(p.windows.map(w=>w.text)),encoding:'utf8',env:tokenizerEnv}));assert.deepEqual(tokens,p.windows.map(w=>w.token_count));
  }finally{f.dispose();}
 });
 
@@ -215,6 +218,6 @@ e=tiktoken.get_encoding('cl100k_base');d=DoclingDocument(name='context-gap');h=d
 raw={'blocks':[{'block_id':h.self_ref,'text':h.text},{'block_id':i.self_ref,'text':i.text}]}
 c=build_structure_blocks(d,raw,e,5000,HybridChunker(tokenizer=OpenAITokenizer(tokenizer=e,max_tokens=5000)),lambda i,r:{'self_ref':i.self_ref,'role':r})
 print(json.dumps({'gaps':[x for x in c if x['status']=='GAP'],'ok':[x['token_count'] for x in c if x['status']=='PLANNED']}))
-`],{cwd:ROOT,encoding:'utf8',env:{...process.env,TIKTOKEN_CACHE_DIR:resolve(ROOT,'local-runs/docling-models/tiktoken')}}));
+`],{cwd:ROOT,encoding:'utf8',env:tokenizerEnv}));
  assert(result.gaps.some(g=>g.text==='不可丢弃的原文与条件。'));assert(result.ok.every(n=>n<=5000));
 });

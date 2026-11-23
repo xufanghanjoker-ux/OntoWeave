@@ -23,7 +23,7 @@ ERRORS = {status: {"model": ErrorEnvelope} for status in (403, 404, 409, 422, 50
 Limit = Annotated[int, Query(ge=1, le=500)]
 
 
-def create_app(backends, *, actor=None, write_token=None, directory=None, model_settings=None):
+def create_app(backends, *, actor=None, write_token=None, directory=None, model_settings=None, query_sessions=None):
     # The registry maps exact library references to explicit PG backends.
     app = FastAPI(title="OntoWeave Publication API", version="1.0.0",
                   openapi_url="/api/v1/openapi.json", docs_url=None, redoc_url=None)
@@ -103,6 +103,10 @@ def create_app(backends, *, actor=None, write_token=None, directory=None, model_
         writer(request)
         return dict(library_ref=library_ref, query_registered=bool(backend(library_ref).get("query")),
                     model_ready=not model_settings or model_settings.ready(), workspace_state=(directory.row(library_ref) or {}).get("workspace_state", "ACTIVE") if directory else "ACTIVE")
+
+    # PG-only native query session transport. Public query routes stay on the Node gateway.
+    from ontoweave_query_sessions.routes import mount_query_sessions
+    mount_query_sessions(app, writer, query_sessions)
 
     @app.post("/_ontoweave/query/{library_ref}/{action}", include_in_schema=False)
     def query_internal(library_ref: str, action: str, body: Annotated[dict, Body()], request: Request):
@@ -341,6 +345,9 @@ def create_app(backends, *, actor=None, write_token=None, directory=None, model_
         selected = backend(library_ref)
         return selected["build"].reconcile(library_ref, run_ref, actor_ref, body) if selected.get("build") else unavailable()
 
+    from .workbench_reads import mount_workbench_reads
+
+    mount_workbench_reads(router, backend, actor)
     app.include_router(router)
     return app
 

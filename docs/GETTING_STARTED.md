@@ -1,6 +1,6 @@
 # OntoWeave 安装与启动
 
-`v0.2.0-alpha.1` 是面向 macOS 本机单用户的源码预览版。使用单独的本机 PostgreSQL 数据库。上一版的 SQLite 工作空间可继续用上一版打开。
+`v0.2.0-alpha.2` 是面向 macOS 本机单用户的源码预览版。PostgreSQL 保存工作空间、知识版本、检索索引及问答会话。
 
 ## 准备环境
 
@@ -62,4 +62,4 @@ npm start -- --config .ontoweave/workbench.json
 
 新建空间并上传一份短 Markdown。确认图谱发布后，在资料目录打开正文；从问答发起一个原文可以回答的问题，点开引用回看来源。接下来可以在同一空间追加或替换资料，核对发布后的图谱和资料目录。
 
-工作空间和确认版本保存在 PostgreSQL，运行配置、凭据及问答记录写入本机运行目录。备份或迁移时请同时保留数据库与本机运行目录。详见[安全说明](../SECURITY.md)和[版本说明](RELEASE_NOTES.md)。
+备份时同时保留 PostgreSQL 数据库与本机运行目录。后者包含设置、凭据及运行产物。详见[安全说明](../SECURITY.md)和[版本说明](RELEASE_NOTES.md)。

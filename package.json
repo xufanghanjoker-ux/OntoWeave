@@ -1,6 +1,6 @@
 {
   "name": "ontoweave",
-  "version": "0.2.0-alpha.1",
+  "version": "0.2.0-alpha.2",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
@@ -11,10 +11,10 @@
   "scripts": {
     "build:web": "node scripts/build-graph.mjs",
     "start": ".venv-pg-cq/bin/python -B scripts/ontoweave-workbench.py start",
-    "check": "node --check web/app.mjs && node --check web/server.mjs && node --check web/engine.mjs && node --check web/mcp-stdio.mjs",
+    "check": "node --check scripts/start-ontoweave.mjs && node --check web/ontoweave-pg-gateway.mjs && node --check web/unified-workbench-v2.mjs",
     "setup:runtime": "node scripts/setup-ontoweave-runtime.mjs",
-    "test": "node --test web/native-fact-reception-v5.test.mjs web/native-fact-reception-chain-v5.test.mjs",
-    "setup:parser": "node web/manage.mjs setup",
+    "test": "node --no-experimental-sqlite --test web/native-fact-reception-v5.test.mjs tests/workbench-assets.test.mjs",
+    "setup:parser": "node scripts/setup-ontoweave-parser.mjs",
     "setup:workbench": ".venv-pg-cq/bin/python -B scripts/ontoweave-workbench.py setup"
   },
   "dependencies": {
@@ -25,7 +25,6 @@
     "jsonc-parser": "3.3.1",
     "jsonrepair": "3.15.0",
     "marked": "18.2.0",
-    "neo4j-driver": "6.2.0",
     "sigma": "3.0.3"
   },
   "devDependencies": {

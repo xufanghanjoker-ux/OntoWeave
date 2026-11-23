@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync } from '
 import { resolve, extname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID, createHash } from 'node:crypto';
-import { atomicFile } from './store.mjs';
+import { atomicFile } from './atomic-file.mjs';
 import { cleanParserEnv, parserHealth } from './runtime.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -48,7 +48,7 @@ export function createDocumentStore(storage, store = null) {
     if (!existsSync(python)) throw Error('未安装Docling环境，请按web/README.md安装');
     // Markdown uses Docling's local SimplePipeline, without PDF/OCR model artifacts.
     // Its installed backend is checked by the actual worker, not the PDF cache manifest.
-    if (store && extension !== '.md' && parserHealth().status !== 'READY') throw Error('解析环境尚未验收或模型缓存不完整，请先运行 npm run setup；详情见 npm run doctor');
+    if (store && extension !== '.md' && parserHealth().status !== 'READY') throw Error('解析环境尚未验收或模型缓存不完整，请运行 npm run setup:parser -- --yes');
     busy = true;
     const id = randomUUID(), dir = resolve(storage, id); mkdirSync(dir);
     const original = resolve(dir, 'original' + extension), rawPath = resolve(dir, 'docling.json');
@@ -62,7 +62,7 @@ export function createDocumentStore(storage, store = null) {
         child.stderr.on('data', bytes => { const match = bytes.toString().match(/"error_code":\s*"([A-Z_]+)"/); if (match) failure = match[1]; });
         const timer = setTimeout(() => { child.kill('SIGKILL'); reject(Error('解析超过5分钟，已停止；原件保留，可稍后重试')); }, 300000);
         child.on('error', () => { clearTimeout(timer); reject(Error('无法启动Docling解析进程')); });
-        child.on('close', code => { clearTimeout(timer); code === 0 ? done() : reject(Error('Docling解析失败 [' + failure + ']：缺模型请运行 npm run setup；无文本请检查扫描件质量。原件已保留，未发送生成模型')); });
+        child.on('close', code => { clearTimeout(timer); code === 0 ? done() : reject(Error('Docling解析失败 [' + failure + ']：缺少模型时运行 npm run setup:parser -- --yes。无文本时请检查扫描件质量。原件已保留。')); });
       });
       renameSync(rawPath + '.tmp', rawPath);
       const parsed = assembleDocument(JSON.parse(readFileSync(rawPath, 'utf8')), {

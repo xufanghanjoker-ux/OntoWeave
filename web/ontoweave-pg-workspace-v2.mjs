@@ -4,8 +4,8 @@ import { appliedPublication, applyGraphDelta, identityReviewSummary, identityRev
 
 const pages = { graph: '图谱', documents: '资料', ontology: '本体', reviews: '待处理', answers: '问答',
   libraries: '工作空间', trash: '回收站', 'knowledge-list': '知识列表', settings: '设置', progress: '整理进度', review: '处理事项', knowledge: '知识详情', source: '原文', change: '本次变化' };
-const stages = { RECEPTION: '资料接收', UNDERSTANDING: '内容整理', EXTRACTION: '知识提取',
-  FACT_ROUTING: '关系整理', PUBLICATION: '生成图谱与检索' };
+const stages = { RECEPTION: '资料接收', UNDERSTANDING: '解析资料', EXTRACTION: '提取知识',
+  FACT_ROUTING: '对齐与分流', PUBLICATION: '发布图谱与索引' };
 const stageAliases = { RECEIVE: 'RECEPTION', PARSING: 'UNDERSTANDING',
   UNDERSTAND: 'UNDERSTANDING', CHUNKING: 'UNDERSTANDING', BLOCK_CQ: 'EXTRACTION', CQ_SIMILARITY: 'EXTRACTION',
   ORGANIZE: 'EXTRACTION', IDENTITY: 'FACT_ROUTING', ONTOLOGY: 'FACT_ROUTING',
@@ -45,6 +45,11 @@ function textOf(value) {
   }
   return textOf(value.label ?? value.raw ?? value.value ?? value.subject_label ?? value.entity_label ??
     value.text ?? value.decimal ?? value.point ?? value.occurred_at ?? (value.start || value.end ? [value.start, value.end] : null));
+}
+function timeLabel(value) {
+  if (!value) return null;
+  if (value.kind === 'STATE') return [textOf(value.start), textOf(value.end)].filter(Boolean).join(' — ');
+  return textOf(value);
 }
 const dateLabel = value => value && !Number.isNaN(Date.parse(value))
   ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '';
@@ -226,12 +231,11 @@ function changesBetween(before, after) {
 }
 const noChanges = () => ({ nodes: new Map(), edges: new Map(), removed: [] });
 
-export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
+export function mountPgWorkspace({ root, boot }) {
   const descriptor = boot.ontoweave_pg;
   const registry = createPgRegistry({ token: boot.token });
   const modelSettings = createPgModelSettings({ token: boot.token });
   const libraries = new Map((descriptor.libraries ?? []).map(library => [library.library_ref, library]));
-  const legacyById = new Map(legacy.map(entry => [entry.id, entry]));
   let defaultLibrary = libraries.has(descriptor.default_library_ref) ? descriptor.default_library_ref : libraries.keys().next().value;
   let createEnabled = descriptor.create_enabled === true;
   let creationPending;
@@ -272,7 +276,6 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
   const selector = shell.querySelector('.pg-library-select');
   function drawLibraries() {
     const entries = [...libraries].map(([key, entry]) => [key, entry.title ?? '知识库']);
-    entries.push(...legacy.map(entry => [entry.id, entry.name]));
     selector.replaceChildren(...entries.map(([key, title]) => {
       const option = el('option', title);
       option.value = key;
@@ -283,8 +286,7 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
   }
   drawLibraries();
   selector.addEventListener('change', () => {
-    if (legacyById.has(selector.value)) openLegacy?.(selector.value);
-    else navigate({ library: selector.value, page: null, pin: null, at: null, asOf: null, source: null });
+    navigate({ library: selector.value, page: null, pin: null, at: null, asOf: null, source: null });
   });
   if (descriptor.fixture === true) selector.after(el('span', '离线夹具', 'lw-tag'));
   shell.addEventListener('click', event => {
@@ -457,12 +459,7 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
         }
         return block(entry.title, actions);
       });
-      const old = legacy.map(entry => {
-        const link = button('', () => openLegacy?.(entry.id));
-        link.append(el('h2', entry.name), el('p', '已有知识空间'));
-        return link;
-      });
-      linkList.replaceChildren(...pg, ...old);
+      linkList.replaceChildren(...pg);
     }
     draw();
     const diagnostics = el('div');
@@ -928,14 +925,13 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
   function historyBar(parent) {
     const manifest = observedViews.get(currentView()?.view_revision) ?? confirmedManifest(head);
     const actions = el('div', null, 'pg-actions');
-    if (route.pin || route.asOf) {
-      actions.append(el('span', '历史视图', 'lw-tag'), button('回到当前版本', () => navigate({ item: route.item, pin: null, asOf: null })));
+    if (route.pin || route.asOf || route.at) {
+      const range = [route.at && '事实时间 ' + (dateLabel(route.at) || '当前'),
+        route.asOf && '截至 ' + dateLabel(route.asOf)].filter(Boolean).join(' · ');
+      actions.append(el('span', range || '固定发布版本', 'lw-tag'), button('返回当前版本', () => navigate({ item: route.item, focus: route.focus, pin: null, at: null, asOf: null })));
       if (lastReady?.view.view_revision !== currentView()?.view_revision) actions.append(el('span', '已有新版', 'lw-muted'));
     }
-    if (manifest?.parent_view_revision && manifest.parent_view_revision !== route.pin) {
-      actions.append(button('上一发布版本', () => navigate({ pin: manifest.parent_view_revision, asOf: null })));
-    }
-    if (manifest?.activated_at && manifest.view_revision === currentView()?.view_revision) {
+    if ((route.pin || route.asOf || route.at) && manifest?.activated_at && manifest.view_revision === currentView()?.view_revision) {
       actions.append(el('span', '发布于 ' + dateLabel(manifest.activated_at), 'lw-muted'));
     }
     if (actions.childElementCount) parent.append(actions);
@@ -972,7 +968,11 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
     content.replaceChildren();
     const scroll = scrollMemory.get(routeHash(route)) ?? 0;
     const restoreScroll = () => { if (version === pageVersion) requestAnimationFrame(() => {
-      if (version === pageVersion) scrollTo(0, scroll);
+      if (version !== pageVersion) return;
+      const hit = route.page === 'source' && !scrollMemory.has(routeHash(route)) &&
+        container.querySelector('[data-source-hit]');
+      if (hit) hit.scrollIntoView({ block: 'center' });
+      else scrollTo(0, scroll);
     }); };
     if (route.page === 'libraries') { renderLibraries(); return; }
     if (route.page === 'trash') { renderTrash(); return; }
@@ -1008,6 +1008,72 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
     return link;
   }
 
+  function renderSourceSearch(parent, view) {
+    const key = JSON.stringify([route.library, viewKey(view), 'source-search']);
+    const form = el('form', null, 'pg-actions pg-source-search-form');
+    const search = el('input');
+    search.type = 'search';
+    search.maxLength = 160;
+    search.placeholder = '搜索文件名或原文片段';
+    search.setAttribute('aria-label', search.placeholder);
+    search.value = historyParts.get(key) ?? '';
+    const submit = el('button', '搜索资料', 'lw-button');
+    submit.type = 'submit';
+    const results = el('div', null, 'pg-source-search-results');
+    results.setAttribute('aria-live', 'polite');
+    form.append(search, submit);
+    parent.append(block('搜索资料', form, results));
+    let sequence = 0;
+    search.addEventListener('input', () => {
+      historyParts.set(key, search.value);
+      sequence++;
+      results.replaceChildren();
+    });
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      void load();
+    });
+    async function load(cursor) {
+      const query = search.value.trim(), ticket = ++sequence;
+      if (!query) { results.replaceChildren(); return; }
+      historyParts.set(key, query);
+      if (!cursor) results.replaceChildren(el('p', '正在查找已发布资料…', 'lw-muted'));
+      try {
+        const page = await readBound('/ui/source-search', view, { query, cursor });
+        if (!form.isConnected || ticket !== sequence) return;
+        if (!cursor) results.replaceChildren(el('p', page.total + ' 个匹配片段', 'lw-muted'));
+        results.querySelector('[data-more-sources]')?.remove();
+        if (!page.items.length) { results.append(el('p', '没有匹配的文件或原文片段。')); return; }
+        results.append(list(page.items, hit => {
+          const row = el('div', null, 'pg-source-hit');
+          const action = button(hit.title ?? '资料片段', () => {
+            const item = ['retrieval', hit.source_ref, page.index_descriptor_ref ?? '',
+              hit.start ?? '', hit.end ?? ''].join('~');
+            navigate({ page: 'source', item, pin: view.view_revision, asOf: null });
+          });
+          row.append(action);
+          const text = el('p');
+          const points = Array.from(hit.snippet);
+          const start = hit.start == null ? -1 : hit.start - hit.snippet_start;
+          const stop = hit.end == null ? -1 : hit.end - hit.snippet_start;
+          if (start >= 0 && stop <= points.length && points.slice(start, stop).join('') === hit.quote) {
+            text.append(points.slice(0, start).join(''), el('mark', hit.quote), points.slice(stop).join(''));
+          } else text.textContent = hit.snippet;
+          row.append(text);
+          return row;
+        }));
+        if (page.next_cursor) {
+          const more = button('继续查找资料', () => { more.disabled = true; void load(page.next_cursor); });
+          more.dataset.moreSources = '';
+          results.append(more);
+        }
+      } catch (error) {
+        if (form.isConnected && ticket === sequence) results.append(errorPanel(error, () => void load(cursor)));
+      }
+    }
+    if (search.value.trim()) void load();
+  }
+
   function renderDocuments() {
     const view = currentView();
     const base = confirmedManifest(head)?.view_revision;
@@ -1017,8 +1083,9 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
     const canReplace = canWrite && base && actions.includes('REPLACE_DOCUMENT');
     const canRemove = canWrite && base && actions.includes('REMOVE_DOCUMENT');
     const uploadArea = el('div');
-    content.append(uploadArea);
     if (route.pin || route.asOf || route.at) historyBar(content);
+    if (view) renderSourceSearch(content, view);
+    content.append(uploadArea);
     const limits = head?.capabilities?.upload_limits;
 
     function editor(action, source) {
@@ -1399,51 +1466,79 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
         projection_focus: null, temporary_context: null } };
   }
   function timeControls(parent) {
-    const row = el('form', null, 'pg-actions pg-time');
-    const mode = el('select');
-    mode.setAttribute('aria-label', '时间范围');
-    for (const [value, label] of [['all', '全部时间'], ['current', '当前有效'], ['at', '指定世界时间'], ['asOf', '按当时的认识']]) {
-      const option = el('option', label);
-      option.value = value;
-      mode.append(option);
-    }
-    mode.value = route.asOf ? 'asOf' : route.at === 'current' ? 'current' : route.at ? 'at' : 'all';
-    const timestamp = el('input');
-    timestamp.setAttribute('aria-label', '时间与时区');
-    timestamp.placeholder = '2026-11-18T10:00:00+08:00';
-    timestamp.value = route.asOf ?? (route.at === 'current' ? '' : route.at) ?? '';
-    const showInput = () => { timestamp.hidden = !['at', 'asOf'].includes(mode.value); };
-    showInput();
-    mode.addEventListener('change', showInput);
-    const tip = el('span', null, 'lw-muted');
-    const submit = el('button', '查看时间范围', 'lw-button');
-    row.addEventListener('submit', event => {
+    const panel = el('details', null, 'pg-history');
+    panel.append(el('summary', '回看历史'));
+    const form = el('form', null, 'pg-history-form');
+    const atLabel = el('label', '查看哪天的事实');
+    const at = el('input');
+    at.type = 'date';
+    atLabel.append(at);
+    const system = el('details');
+    system.append(el('summary', '按当时掌握的信息回放'));
+    const systemLabel = el('label', '截至时间');
+    const asOf = el('input');
+    asOf.type = 'datetime-local';
+    asOf.step = '1';
+    systemLabel.append(asOf);
+    system.append(systemLabel, el('small', '按此设备时区解释', 'lw-muted'));
+    const local = value => {
+      const date = new Date(value);
+      return Number.isFinite(date.valueOf())
+        ? new Date(date.valueOf() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 19) : '';
+    };
+    if (route.at) at.value = local(route.at).slice(0, 10);
+    if (route.asOf) { asOf.value = local(route.asOf); system.open = true; }
+    const submit = el('button', '应用范围', 'lw-button primary');
+    submit.type = 'submit';
+    const warning = el('p', null, 'lw-muted');
+    warning.setAttribute('role', 'status');
+    form.addEventListener('submit', event => {
       event.preventDefault();
-      const value = timestamp.value.trim();
-      if (mode.value === 'asOf' && (!/(Z|[+-]\d{2}:\d{2})$/.test(value) || !Number.isFinite(Date.parse(value)))) {
-        tip.textContent = '请选择带时区的完整时间点。';
+      const world = at.value ? new Date(at.value + 'T23:59:59.999') : null;
+      const known = system.open && asOf.value ? new Date(asOf.value) : null;
+      if (!world && !known) { warning.textContent = '请选择事实日期或回放时间。'; return; }
+      if ((world && !Number.isFinite(world.valueOf())) || (known && !Number.isFinite(known.valueOf()))) {
+        warning.textContent = '请填写有效日期和时间。';
         return;
       }
-      if (mode.value === 'at' && !value) { tip.textContent = '请填写要查看的世界时间。'; return; }
-      navigate({ item: route.item, pin: mode.value === 'asOf' ? null : route.pin,
-        at: mode.value === 'at' ? value : mode.value === 'current' ? 'current' : null,
-        asOf: mode.value === 'asOf' ? value : null });
+      navigate({ item: route.item, focus: route.focus, pin: null,
+        at: world?.toISOString() ?? null, asOf: known?.toISOString() ?? null });
     });
-    row.append(mode, timestamp, submit, tip);
-    parent.append(row);
+    form.append(atLabel, system, submit, warning);
+    const parentView = (observedViews.get(currentView()?.view_revision) ?? confirmedManifest(head))?.parent_view_revision;
+    if (parentView && parentView !== route.pin) form.append(button('上一发布版本',
+      () => navigate({ item: route.item, focus: route.focus, pin: parentView, asOf: null })));
+    panel.append(form);
+    parent.append(panel);
   }
   async function renderGraph(parent, view, active) {
     const frame = displayed;
-    const data = frame.data;
+    let data = frame.data;
     const focusType = !route.focus ? route.item : null;
     const target = route.focus && route.item ? { kind: route.focus, id: route.item } : null;
-    const key = JSON.stringify([route.library, viewKey(view), focusType]);
+    let targeted = false;
+    let targetError;
+    if (target && ['entity', 'relation'].includes(target.kind) &&
+        !data.graph[target.kind === 'entity' ? 'nodes' : 'edges'].some(row => row.id === target.id)) {
+      try {
+        const nearby = await readBound('/ui/graph/neighborhood', view, { kind: target.kind, target: target.id });
+        if (!active()) return;
+        if (!matchingGraph(nearby, view)) throw new Error('Unconfirmed neighborhood');
+        data = nearby;
+        targeted = true;
+      } catch (error) { if (!active()) return; targetError = error; }
+    }
+    const key = JSON.stringify([route.library, viewKey(view), focusType, ...(targeted ? [target.kind, target.id] : [])]);
     const restored = canvasContext(view, key, data);
     selected = restored?.selected ?? null;
     const update = !route.pin && !route.asOf && graphUpdate?.after.view.view_revision === view.view_revision ? graphUpdate : null;
     const publication = observedViews.get(view.view_revision);
     const notes = el('div');
     if (loadError && lastReady) notes.append(errorPanel(loadError, () => invalidate('user_read')));
+    if (targetError) notes.append(targetError.status === 404 ?
+      el('p', '此对象或关系不在当前发布与时间范围内。', 'lw-muted') :
+      errorPanel(targetError, () => { renderKey = undefined; render(); }));
+    if (targeted) notes.append(button('返回图谱概览', () => navigate({ page: 'graph' })));
     if (publication?.counts) {
       const counts = el('ul', null, 'pg-metrics');
       for (const [label, number] of [['标准事实', publication.counts.standard_facts],
@@ -1495,7 +1590,9 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
     status.dataset.graphStatus = '';
     status.setAttribute('role', 'status');
     canvas.append(canvasToolbar, surface, status);
-    const inspector = block('知识详情', el('p', '选择对象或关系查看定义与原文依据。', 'lw-muted'));
+    const inspector = block('知识详情');
+    inspector.hidden = !selected;
+    layout.classList.toggle('pg-graph-with-selection', Boolean(selected));
     const browse = el('details');
     browse.append(el('summary', '按列表查看对象与关系'));
     const search = el('input');
@@ -1506,6 +1603,8 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
     const entries = el('div', null, 'pg-browse');
     function inspect(id, kind) {
       selected = id ? { id, kind } : null;
+      inspector.hidden = !id;
+      layout.classList.toggle('pg-graph-with-selection', Boolean(id));
       showSelection(inspector, data, view, types, id, kind).catch(error => {
         if (active() && selected?.id === id) inspector.append(errorPanel(error));
       });
@@ -1605,8 +1704,9 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
           const objects = target.kind === 'entity' ? data.graph.nodes : data.graph.edges;
           if (objects.some(item => item.id === target.id)) {
             const id = target.id;
-            graphView.select(id, target.kind);
-            graphView.locate(id, target.kind);
+            if (restored?.selected?.id !== id || restored.selected.kind !== target.kind) {
+              graphView.locate(id, target.kind);
+            }
             inspect(id, target.kind);
           } else status.textContent = '此引用的对象或关系暂未出现在已加载的图范围。';
         }
@@ -1627,7 +1727,7 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
       parent.append(el('h3', node.label));
       const typeRefs = node.type_refs ?? [];
       if (typeRefs.length) parent.append(list(typeRefs, type => button(types.get(type) ?? '查看类型定义',
-        () => go('ontology', type, view.view_revision))));
+        () => navigate({ page: 'ontology', item: type, pin: view.view_revision, asOf: null }))));
       parent.append(list(data.graph.edges.filter(edge => edge.source === id || edge.target === id), edge => {
         const label = data.graph.nodes.find(node => node.id === (edge.source === id ? edge.target : edge.source))?.label;
         return button([edge.label, label].filter(Boolean).join(' · '),
@@ -1647,7 +1747,7 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
       parent.append(sourceButtons(edge.source_refs, view));
       return;
     }
-    const fact = await readBound('/knowledge/' + ref(edge.fact_ref ?? edge.id), view);
+    const fact = await readBound('/ui/facts/' + ref(edge.fact_ref ?? edge.id), view);
 
     if (parent.isConnected && selected?.id === id) parent.append(factDetails(fact, view));
   }
@@ -1680,13 +1780,13 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
   async function renderSource(parent, view, active) {
     if (route.item?.startsWith('retrieval~')) {
       const [, sourceRef, descriptorRef, rawStart, rawEnd] = route.item.split('~');
-      const quoteStart = Number(rawStart), quoteEnd = Number(rawEnd);
+      const quoteStart = rawStart ? Number(rawStart) : 0, quoteEnd = rawEnd ? Number(rawEnd) : 0;
       const result = await api.get('/retrieval/sources/' + ref(sourceRef), {
         view_revision: view.view_revision, index_descriptor_ref: descriptorRef || null,
         start: Number.isSafeInteger(quoteStart) ? Math.max(0, quoteStart - 500) : 0,
       });
       if (!active()) return;
-      if (result.view_revision !== view.view_revision || result.index_descriptor_ref !== descriptorRef) {
+      if (result.view_revision !== view.view_revision || result.index_descriptor_ref !== (descriptorRef || null)) {
         throw Error('SOURCE_VIEW_MISMATCH');
       }
       const spanStart = quoteStart - result.location.start, spanEnd = quoteEnd - result.location.start;
@@ -1694,9 +1794,12 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
       const quote = spanStart >= 0 && spanEnd > spanStart && spanEnd <= points.length
         ? {start:spanStart, end:spanEnd, quote:points.slice(spanStart,spanEnd).join(''), coordinate_system:'UNIT_CODEPOINTS'} : null;
       const body = el('pre', null, 'pg-source-text');
-      if (quote) body.append(document.createTextNode(points.slice(0,spanStart).join('')),
-        el('mark', quote.quote), document.createTextNode(points.slice(spanEnd).join('')));
-      else body.textContent = result.text;
+      if (quote) {
+        const hit = el('mark', quote.quote);
+        hit.dataset.sourceHit = '';
+        body.append(document.createTextNode(points.slice(0,spanStart).join('')),
+          hit, document.createTextNode(points.slice(spanEnd).join('')));
+      } else body.textContent = result.text;
       parent.append(button('返回来源入口', () => history.back()), block('资料原文',
         el('p', '固定资料版本 · 原文块范围 ' + result.location.start + '–' + result.location.end, 'lw-muted'), body));
       return;
@@ -1723,11 +1826,13 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
       ['适用范围', textOf(fact.scope ?? fact.content?.conditions?.scope)],
       ['归因', textOf(fact.content?.conditions?.attribution)], ['限定', textOf(fact.qualifiers ?? fact.content?.conditions?.context)],
       ['表达方式', modalityNames[fact.modality] ?? textOf(fact.modality)], ['是否否定', typeof (fact.negated ?? fact.content?.negated) === 'boolean' ? ((fact.negated ?? fact.content.negated) ? '是' : '否') : null],
-      ['原文时间', textOf(fact.asserted_world_time ?? fact.world_time)],
+      ['生效时间', timeLabel(fact.world_time ?? fact.asserted_world_time)],
+      ['记录时间', dateLabel(fact.recorded_at)],
       ['采用状态', knowledgeStates[fact.state] ?? fact.state],
     ]));
     if (fact.statement_text) area.append(el('blockquote', fact.statement_text));
-    if (fact.definition_ref) area.append(button('查看关系定义', () => go('ontology', fact.definition_ref, view.view_revision)));
+    if (fact.definition_ref) area.append(button('查看定义', () =>
+      navigate({ page: 'ontology', item: fact.definition_ref, pin: view.view_revision, asOf: null })));
     for (const reviewRef of fact.review_refs ?? (fact.review_ref ? [fact.review_ref] : [])) {
       area.append(button('查看对应事项', () => go('review', reviewRef, view.view_revision)));
     }
@@ -1791,7 +1896,8 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
   async function renderKnowledge(parent, view, active) {
     const path = '/knowledge/' + ref(route.item);
     const open = route.focus === 'open';
-    const fact = await readBound(path, view, open ? { kind: 'OPEN' } : undefined);
+    const fact = open ? await readBound(path, view, { kind: 'OPEN' }) :
+      await readBound('/ui/facts/' + ref(route.item), view);
     if (!active()) return;
     const panel = block(fact.label ?? '知识依据', factDetails(fact, view));
     parent.append(button('返回上一步', () => history.back()), panel);
@@ -1959,77 +2065,221 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
   }
 
   async function renderOntology(parent, view, active) {
-    if (route.item) {
-      const definition = await readBound('/ontology/' + ref(route.item), view);
-      if (!active()) return;
-      const detail = definition.definition ?? definition;
-      const detailType = definitionKinds[detail.kind];
-      parent.append(button('返回上一步', () => history.back()));
-      const pane = block(detail.label ?? '定义详情', fields([
-        ['种类', detailType], ['定义状态', definitionStates[detail.definition_status ?? detail.status]], ['含义', detail.description],
-        ['目前资料中的用法', textOf(detail.observed_usage)], ['观察到的主体类型', textOf(detail.observed_domains)],
-        ['观察到的客体类型', textOf(detail.observed_ranges)], ['适用范围', textOf(detail.scope)],
-        ['值形状', textOf(detail.value_shape ?? detail.observed_datatypes)], ['单位', textOf(detail.unit)],
-        ['时间语义', textOf(detail.temporal_semantics ?? detail.time_semantics)],
-      ]));
-      parent.append(pane);
-      const mappings = detail.bindings ?? definition.bindings;
-      if (mappings?.length) pane.append(block('资料原词与标准方向', list(mappings, binding =>
-        el('span', [binding.phrase ?? binding.raw_label ?? binding.original_expression, { FORWARD: '正向映射', REVERSE: '反向映射',
-          REVERSED: '反向映射' }[binding.direction], binding.original_direction_label, binding.standard_direction_label].filter(Boolean).join(' · ')))));
-      const sources = detail.sources ?? detail.source_refs;
-      if (sources?.length) pane.append(block('定义来源', sourceButtons(sources, view)));
-      const facts = detail.related_facts ?? [];
-      if (facts.length) pane.append(block('关联实例', list(facts, fact =>
-        button(fact.label ?? '查看相关事实', () => go('knowledge', fact.fact_ref)))));
-      pane.append(button('在图谱中查看实例', () => go('graph', detail.definition_ref ?? route.item, view.view_revision)));
-      if (!readOnly(view) && (detail.available_actions ?? definition.available_actions ?? []).includes('FEEDBACK')) {
-        renderFeedback(pane, detail, view);
+    const key = JSON.stringify([route.library, viewKey(view), 'ontology-screen']);
+    const preferences = historyParts.get(key) ?? { mode: 'graph', query: '', kind: '', status: '' };
+    historyParts.set(key, preferences);
+    const requested = route.item;
+    const toolbar = el('div', null, 'pg-actions pg-ontology-tabs');
+    if (requested) toolbar.append(button('返回上一步', () => history.back()));
+    const chooseMode = mode => {
+      preferences.mode = mode;
+      renderKey = undefined;
+      render();
+    };
+    for (const [mode, label] of [['graph', '结构图'], ['table', '定义表']]) {
+      const tab = button(label, () => chooseMode(mode));
+      tab.setAttribute('aria-pressed', String(preferences.mode === mode));
+      toolbar.append(tab);
+    }
+    const grid = el('div', null, 'pg-ontology-layout');
+    const browse = el('aside', null, 'pg-ontology-browse');
+    const pane = el('aside', null, 'pg-ontology-inspector');
+    pane.setAttribute('aria-label', '定义详情');
+    const layout = el('section', null, 'pg-ontology-main');
+    const search = el('input');
+    search.type = 'search';
+    search.maxLength = 160;
+    search.placeholder = '查找定义';
+    search.setAttribute('aria-label', search.placeholder);
+    search.value = preferences.query;
+    const filters = el('div', null, 'pg-actions');
+    filters.append(search);
+    function filter(label, items, preference) {
+      const select = el('select');
+      select.setAttribute('aria-label', label);
+      for (const [value, text] of [['', label], ...Object.entries(items)]) {
+        const option = el('option', text);
+        option.value = value;
+        select.append(option);
       }
+      select.value = preferences[preference];
+      select.addEventListener('change', () => { preferences[preference] = select.value; void loadCatalog(); });
+      filters.append(select);
+    }
+    if (preferences.mode === 'table') {
+      filter('全部种类', definitionKinds, 'kind');
+      filter('全部状态', definitionStates, 'status');
+    }
+    const catalog = el('div', null, 'pg-ontology-catalog');
+    catalog.setAttribute('aria-live', 'polite');
+    (preferences.mode === 'graph' ? browse : layout).append(filters, catalog);
+    if (preferences.mode === 'graph') grid.append(browse);
+    grid.append(layout, pane);
+    parent.append(toolbar, grid);
+    let listSequence = 0, detailSequence = 0;
+    async function loadCatalog(cursor) {
+      const ticket = ++listSequence;
+      if (!cursor) catalog.replaceChildren(el('p', '正在读取定义…', 'lw-muted'));
+      try {
+        const page = await readBound('/ui/definitions', view, {
+          cursor, query: preferences.query, kind: preferences.mode === 'table' ? preferences.kind : null,
+          status: preferences.mode === 'table' ? preferences.status : null,
+        });
+        if (!active() || ticket !== listSequence) return;
+        if (!cursor) catalog.replaceChildren();
+        catalog.querySelector('[data-more-definitions]')?.remove();
+        if (preferences.mode === 'table' && page.items.length) {
+          let body = catalog.querySelector('tbody');
+          if (!body) {
+            const table = el('table', null, 'pg-definitions-table');
+            const header = el('tr');
+            for (const label of ['定义', '种类', '状态']) header.append(el('th', label));
+            const head = el('thead');
+            head.append(header);
+            body = el('tbody');
+            table.append(head, body);
+            catalog.append(table);
+          }
+          for (const row of page.items) {
+            const tr = el('tr'), cell = el('td');
+            cell.append(button(row.label, () => chooseDefinition(row.definition_ref)));
+            tr.append(cell, el('td', definitionKinds[row.kind] ?? row.kind),
+              el('td', definitionStates[row.definition_status] ?? row.definition_status));
+            body.append(tr);
+          }
+        } else catalog.append(list(page.items, row =>
+          button(row.label, () => chooseDefinition(row.definition_ref)), '没有匹配定义。'));
+        if (page.next_cursor) {
+          const more = button('继续读取定义', () => { more.disabled = true; void loadCatalog(page.next_cursor); });
+          more.dataset.moreDefinitions = '';
+          catalog.append(more);
+        }
+      } catch (error) {
+        if (active() && ticket === listSequence) catalog.append(errorPanel(error, () => void loadCatalog(cursor)));
+      }
+    }
+    function chooseDefinition(id) {
+      if (id && id !== route.item) navigate({ page: 'ontology', item: id });
+    }
+    search.addEventListener('input', () => { preferences.query = search.value; void loadCatalog(); });
+    void loadCatalog();
+    if (requested) {
+      const ticket = ++detailSequence;
+      pane.append(el('p', '正在读取定义详情…', 'lw-muted'));
+      void readBound('/ontology/' + ref(requested), view).then(definition => {
+        if (active() && ticket === detailSequence) renderDefinitionDetail(pane, definition, requested, view);
+      }).catch(error => {
+        if (active()) pane.replaceChildren(errorPanel(error, () => { renderKey = undefined; render(); }));
+      });
+    } else pane.hidden = true;
+    if (preferences.mode !== 'graph') return;
+    const [packet, tools] = await Promise.all([
+      readBound('/ui/ontology-graph', view, { focus: requested }),
+      graphTools ?? import('/assets/graph-view.mjs'),
+    ]).catch(error => {
+      if (active()) layout.append(errorPanel(error, () => { renderKey = undefined; render(); }));
+      return [];
+    });
+    if (!active() || !packet) return;
+    graphTools = tools;
+    if (!packet.nodes.length) {
+      layout.append(el('p', '这个版本暂无可绘制的类型。可以从定义表查阅已记录的定义。', 'lw-muted'));
       return;
     }
-    const filters = el('div', null, 'pg-actions');
-    const overview = el('div');
-    parent.append(filters, overview);
-    const items = [];
-    const listKey = JSON.stringify([route.library, viewKey(view), 'ontology']);
-    const selectedKinds = new Set(historyParts.get(listKey) ?? Object.keys(definitionKinds));
-    let cursor;
-    function draw() {
-      overview.replaceChildren(...Object.entries(definitionKinds).filter(([kind]) => selectedKinds.has(kind)).map(([kind, label]) =>
-        block(label, list(items.filter(item => item.kind === kind), item => {
-          const row = el('div');
-          row.append(button(item.label, () => go('ontology', item.definition_ref)),
-            el('small', [definitionStates[item.definition_status ?? item.status], Number.isFinite(item.instance_count) ? item.instance_count + ' 个实例' : ''].filter(Boolean).join(' · ')));
-          return row;
-        }, '当前范围暂无' + label + '定义。'))));
-      if (cursor) {
-        const more = button('继续读取定义', async () => {
-          more.disabled = true;
-          try { await load(cursor); } catch (error) { if (active()) overview.append(errorPanel(error)); }
-        });
-        overview.append(more);
+    const revision = view.view_revision;
+    const data = { view_revision: revision, graph: { nodes: packet.nodes.map(node => ({
+      ...node, type_refs: [node.id], type_label: '类型',
+    })), edges: packet.edges } };
+    const types = new Map(packet.nodes.map(node => [node.id, node.label]));
+    const projection = projectionFor(data, noChanges(), types);
+    const canvas = el('div', null, 'pg-graph-canvas');
+    const controls = el('div', null, 'pg-actions pg-graph-toolbar');
+    for (const [command, label] of [['in', '放大'], ['out', '缩小'], ['fit', '适应视图'], ['layout', '重新布局']]) {
+      const control = button(label, () => {});
+      control.dataset.graphCommand = command;
+      controls.append(control);
+    }
+    const surface = el('div', null, 'pg-graph-surface');
+    surface.dataset.graphSurface = '';
+    surface.tabIndex = 0;
+    surface.setAttribute('aria-label', '本体类型关系图');
+    const status = el('p', null, 'lw-muted');
+    status.dataset.graphStatus = '';
+    canvas.append(controls, surface, status,
+      el('p', '箭头为资料中观察到的类型关系。', 'lw-muted'));
+    if (packet.next_cursor) canvas.append(el('p', '这里只绘制部分类型。可用定义查找定位其余定义。', 'lw-muted'));
+    layout.append(canvas);
+    const canvasScope = JSON.stringify([route.library, viewKey(view), 'ontology-canvas']);
+    const saved = contexts.get(canvasScope);
+    try {
+      const handle = tools.createGraphView(canvas, { id: revision }, {
+        labelTheme: 'native-domain', edgeLabels: 'auto', layoutKey: canvasScope,
+        context: saved?.snapshot, projectionFactory: () => projection,
+        onSelect(id, kind) {
+          if (id) chooseDefinition(kind === 'entity' ? id : packet.edges.find(edge => edge.id === id)?.definition_ref);
+        },
+      });
+      graphView = handle;
+      canvasKey = canvasScope;
+      const picked = packet.edges.find(edge => edge.definition_ref === requested);
+      // The canvas may display several observed pairs for a single definition. The detail
+      // resolves the stable definition reference and shows all of its scoped instances.
+      if (picked) handle.select(picked.id, 'relation');
+      else if (packet.nodes.some(node => node.id === requested)) handle.select(requested, 'entity');
+      selected = requested ? { id: picked?.id ?? requested, kind: picked ? 'relation' : 'entity' } : null;
+    } catch {
+      surface.hidden = true;
+      status.textContent = '画布暂不可用。可继续查找定义并查看其依据。';
+    }
+  }
+
+  function renderDefinitionDetail(pane, definition, definitionRef, view) {
+    const detail = definition.definition ?? definition;
+    const detailType = definitionKinds[detail.kind];
+    const body = block(detail.label ?? '定义详情', fields([
+      ['种类', detailType], ['定义状态', definitionStates[detail.definition_status ?? detail.status]], ['含义', detail.description],
+      ['目前资料中的用法', textOf(detail.observed_usage)], ['观察到的主体类型', textOf(detail.observed_domains)],
+      ['观察到的客体类型', textOf(detail.observed_ranges)], ['适用范围', textOf(detail.scope)],
+      ['值形状', textOf(detail.value_shape ?? detail.observed_datatypes)], ['单位', textOf(detail.unit)],
+      ['时间语义', textOf(detail.temporal_semantics ?? detail.time_semantics)],
+    ]));
+    pane.replaceChildren(body);
+    const mappings = detail.bindings ?? definition.bindings;
+    if (mappings?.length) pane.append(block('资料原词与标准方向', list(mappings, binding =>
+      el('span', [binding.phrase ?? binding.raw_label ?? binding.original_expression, { FORWARD: '正向映射', REVERSE: '反向映射',
+        REVERSED: '反向映射' }[binding.direction], binding.original_direction_label, binding.standard_direction_label].filter(Boolean).join(' · ')))));
+    const sources = detail.sources ?? detail.source_refs;
+    if (sources?.length) pane.append(block('定义来源', sourceButtons(sources, view)));
+    const instances = block('同范围实例', el('p', '正在查找…', 'lw-muted'));
+    body.append(instances);
+    async function loadInstances(cursor) {
+      try {
+        const page = await readBound('/ui/definitions/' + ref(definitionRef) + '/instances', view, { cursor });
+        if (!instances.isConnected) return;
+        if (!cursor) instances.replaceChildren(el('h2', '同范围实例'), el('p', page.total + ' 项', 'lw-muted'));
+        instances.querySelector('[data-more-instances]')?.remove();
+        if (!page.items.length) {
+          instances.append(el('p', view.resolved_scope.at ? '此时间范围内没有实例。' : '此发布版本没有实例。'));
+        } else instances.append(list(page.items, item => button(
+          [item.subject, item.label, item.object].filter(Boolean).join(' · '), () => navigate({
+            page: item.kind === 'knowledge' ? 'knowledge' : 'graph', item: item.id,
+            focus: item.kind === 'knowledge' ? null : item.kind, pin: view.view_revision, asOf: null,
+          }))));
+        if (page.next_cursor) {
+          const more = button('继续查看实例', () => { more.disabled = true; void loadInstances(page.next_cursor); });
+          more.dataset.moreInstances = '';
+          instances.append(more);
+        }
+      } catch (error) {
+        if (instances.isConnected) instances.append(errorPanel(error, () => void loadInstances(cursor)));
       }
     }
-    for (const [kind, label] of Object.entries(definitionKinds)) {
-      const toggle = button(label, () => {
-        if (!selectedKinds.delete(kind)) selectedKinds.add(kind);
-        toggle.setAttribute('aria-pressed', String(selectedKinds.has(kind)));
-        historyParts.set(listKey, [...selectedKinds]);
-        draw();
-      });
-      toggle.setAttribute('aria-pressed', 'true');
-      filters.append(toggle);
+    void loadInstances();
+    if (!readOnly(view) && (detail.available_actions ?? definition.available_actions ?? []).includes('FEEDBACK')) {
+      renderFeedback(body, detail, view);
     }
-    async function load(next) {
-      const data = await readBound('/ontology', view, { cursor: next });
-      if (!active()) return;
-      items.push(...(data.items ?? []));
-      cursor = data.next_cursor ?? data.selection?.next_cursor;
-      draw();
-    }
-    await load();
   }
+
   function renderFeedback(parent, detail, view) {
     const feedback = el('details');
     const prompt = el('summary', '反馈定义问题');
@@ -2236,7 +2486,7 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
     return { pane: sidePane, readable: settled.every(result => result.status === 'fulfilled' &&
       Boolean(result.value.data.text ?? result.value.data.unit_text)) };
   }
-  function impactBlock(preview, view) {
+  function impactBlock(preview, view, { applied = false } = {}) {
     const columns = el('div', null, 'pg-pair');
     const beforeEntities = new Map((preview.before?.entities ?? []).map(entity => [entity.entity_ref, entity]));
     const definitions = new Map((preview.before?.sides ?? []).map(side => [side.definition_ref, side.label]));
@@ -2263,7 +2513,8 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
       return result;
     }
     columns.append(block('修改前', impactEntries(preview.before)), block('修改后', impactEntries(preview.after)));
-    const impact = preview.impact;
+    const impact = applied ? { graph: preview, affected_fact_refs: preview.affected_fact_refs,
+      affected_definition_refs: preview.affected_definition_refs } : preview.impact;
     const indexed = impact?.index;
     const indexTotal = indexed && Object.values(indexed).every(Number.isFinite)
       ? Object.values(indexed).reduce((a, b) => a + b, 0) : null;
@@ -2278,8 +2529,8 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
       ['索引变化记录', impact?.index?.documents_updated ?? indexTotal],
       ['尚未确认的影响项', impact?.unknown?.length || null],
     ].filter(([, value]) => value != null);
-    const area = block('预计影响', fields(dimensions), columns);
-    if (!dimensions.length) area.prepend(el('p', '影响尚未完整计算。', 'lw-muted'));
+    const area = block(applied ? '实际影响' : '预计影响', fields(dimensions), columns);
+    if (!dimensions.length && !applied) area.prepend(el('p', '影响尚未完整计算。', 'lw-muted'));
     if (preview.timeline_summary) area.append(el('p', preview.timeline_summary));
     if (preview.expires_at) area.append(el('p', '预览有效至 ' + dateLabel(preview.expires_at), 'lw-muted'));
     return area;
@@ -2741,13 +2992,29 @@ export function mountPgWorkspace({ root, boot, legacy = [], openLegacy }) {
   async function renderChange(parent, view, active) {
     const change = await readBound('/changes/' + ref(route.item), view);
     if (!active()) return;
-    const area = block(change.title ?? '本次变化', impactBlock(change, view), sourceButtons(change.source_refs, view));
+    const area = block(change.title ?? '本次变化', impactBlock(change, view, { applied: true }), sourceButtons(change.source_refs, view));
     parent.append(area);
     const actions = el('div', null, 'pg-actions');
-    const historical = change.to && change.to !== confirmedManifest(head)?.view_revision;
-    actions.append(button(historical ? '查看应用后的图谱' : '查看图中变化',
-      () => navigate({ page: 'graph', pin: historical ? change.to : null, at: null, asOf: null })));
-    if (change.from) actions.append(button('查看修改前的版本', () => go('graph', null, change.from)));
+    const graphItems = [
+      ...['added', 'updated'].flatMap(category => ['nodes', 'edges'].flatMap(kind =>
+        (change[category]?.[kind] ?? []).map(row => ({ id: row.id, label: row.label, kind, category, view: change.to })))),
+      ...['node_refs', 'edge_refs'].flatMap(kind => (change.removed?.[kind] ?? []).map(id => ({
+        id, kind: kind === 'node_refs' ? 'nodes' : 'edges', category: 'removed', view: change.from,
+      }))),
+    ].filter(item => item.id && item.view);
+    function graphAt(item, pin) {
+      navigate({ page: 'graph', item: item?.id, focus: item && (item.kind === 'nodes' ? 'entity' : 'relation'),
+        pin, at: null, asOf: null });
+    }
+    const graphTarget = graphItems.find(item => item.category !== 'removed') ?? graphItems[0];
+    if (graphTarget) actions.append(button('查看图中变化', () => graphAt(graphTarget, graphTarget.view), true));
+    else if (change.to) actions.append(button('查看更新后的图谱', () => graphAt(null, change.to)));
+    if (change.from) actions.append(button('查看修改前的版本', () => graphAt(null, change.from)));
+    if (graphItems.length) area.append(block('在指定版本定位', list(graphItems, item => {
+      const category = { added: '新增', updated: '修改', removed: '移出' }[item.category];
+      return button(category + ' · ' + (item.label || (item.kind === 'nodes' ? '对象' : '关系')),
+        () => graphAt(item, item.view));
+    })));
     area.append(actions);
     const available = change.available_actions ?? [];
     if (!change.decision_ref || !available.includes('REVERT') || readOnly(view)) return;

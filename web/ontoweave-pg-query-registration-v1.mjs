@@ -3,7 +3,7 @@ import { constants, closeSync, fstatSync, mkdirSync, openSync, readFileSync, sta
 import { resolve } from "node:path";
 import { createHash } from "node:crypto";
 
-import { createStore } from "./store.mjs";
+import { createPgQuerySessionStore } from "./native-query-session-store-v1.mjs";
 import { createSourceModels } from "./source-models-v1.mjs";
 import { createNativeQueryProduct } from "./native-query-product-v1.mjs";
 import { createNativeQueryHttp } from "./native-query-http-v1.mjs";
@@ -94,7 +94,7 @@ export function registerPgQuery({query, endpoint, writeToken, authorizeLibrary, 
   mkdirSync(storage, {mode:0o700, recursive:true});
   const info = statSync(storage);
   if (info.uid !== process.getuid() || (info.mode & 0o077)) throw fail("QUERY_STORAGE_DIRECTORY_NOT_PRIVATE");
-  const store = createStore(storage);
+  const store = createPgQuerySessionStore({endpoint, writeToken});
   try {
     const pgQueryPort = createPgQueryPort({request:async ({libraryId, action, body, signal}) => {
 
@@ -128,9 +128,9 @@ export function registerPgQuery({query, endpoint, writeToken, authorizeLibrary, 
         return authorizeLibrary(libraryId, action);
       },
     });
-    return {handle, close: async () => { try {await product.close();} finally {store.close();} }};
+    return {handle, close: async () => { try {await product.close();} finally {await store.close();} }};
   } catch (error) {
-    store.close();
+    void store.close().catch(() => {});
     throw error;
   }
 }

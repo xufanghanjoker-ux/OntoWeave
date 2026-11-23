@@ -30,7 +30,7 @@ function verifySuccessor(incoming) {
   verify(hash(raw) === expected, 'IDENTITY_SUCCESSOR_MANIFEST_CHANGED');
   const manifest = JSON.parse(raw.toString('utf8'));
   verify(manifest.contract === 'ontoweave-workbench-source-lock/1' &&
-    manifest.baseline_id === 'ontoweave-workbench-0.2.0-alpha.1' &&
+    manifest.baseline_id === 'ontoweave-workbench-0.2.0-alpha.2' &&
     Array.isArray(manifest.files), 'IDENTITY_WORKBENCH_SOURCE_LOCK_INVALID');
   const pins = new Map(manifest.files.map(row => [row.path, row.sha256]));
   verify(pins.size === manifest.files.length &&
