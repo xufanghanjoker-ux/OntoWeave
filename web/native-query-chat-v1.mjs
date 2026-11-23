@@ -14,10 +14,11 @@ export function createNativeQueryChat({store,queryId,conversationId,turnId,turnI
  if(prior)need(hash(prior.source_scope)===scopeRef,'QUERY_CHAT_SCOPE_CHANGED');if(sourceScope.temporal_view_sha256)for(const entry of inherited)need(entry.query_scope_ref===scopeRef,'QUERY_CITATION_TEMPORAL_SCOPE_MISMATCH');
  if(!prior)store.putRecord(TURN,queryId,{query_id:queryId,conversation_id:conversationId,turn_id:turnId,turn_index:turnIndex,source_scope:clone(sourceScope),last_event_seq:0,messages:[],registry:clone(inherited),reserved_through:reservedThrough,final_markdown:null});
  const state=()=>store.getRecord(TURN,queryId);
- function publish(type,data,mutate=()=>{}){
+ function publish(type,data,mutate=()=>{},notify=true){
   let event;store.transaction(()=>{const row=state();mutate(row);event=publicQueryEvent({version:'lightog-retrieval-chat/1',query_ref:queryId,query_id:queryId,conversation_id:conversationId,turn_id:turnId,seq:row.last_event_seq+1,type,at:Date.now(),data});row.last_event_seq=event.seq;store.putRecord(EVENT,queryId+':'+String(event.seq).padStart(10,'0'),event);store.putRecord(TURN,queryId,row);});
-  try{onEvent(clone(event));}catch{}return event;
+  if(notify)broadcast(event);return event;
  }
+ function broadcast(event){try{onEvent(clone(event));}catch{}}
  function register(citation,{number=null,inheritedFrom=null}={}){
   if(sourceScope.temporal_view_sha256)need(citation.temporal_scope?.view_ref===sourceScope.view_ref&&citation.temporal_scope?.temporal_view_sha256===sourceScope.temporal_view_sha256&&hash(citation.temporal_scope?.temporal_selection)===hash(sourceScope.temporal_selection),'QUERY_CITATION_TEMPORAL_SCOPE_MISMATCH');
   const current=state(),existing=current.registry.find(r=>r.citation_ref===citation.citation_ref);if(existing)return existing;
@@ -40,7 +41,7 @@ export function createNativeQueryChat({store,queryId,conversationId,turnId,turnI
   const next=state();next.final_markdown=text;store.putRecord(TURN,queryId,next);return projection(text);
  }
  if(!prior){publish('turn.created',{question});for(const entry of inherited)publish('citation.registered',entry);}
- return {publish,register,partial,finish,publicEvent,state,events(after=0){const context=citationReadContext(queryId,sourceScope.source_snapshot_ref,state());return store.listRecords(EVENT).filter(e=>e.query_id===queryId&&e.seq>after).sort((a,b)=>a.seq-b.seq).map(e=>publicQueryEvent(e,context));}};
+ return {publish,broadcast,register,partial,finish,publicEvent,state,events(after=0){const context=citationReadContext(queryId,sourceScope.source_snapshot_ref,state());return store.listRecords(EVENT).filter(e=>e.query_id===queryId&&e.seq>after).sort((a,b)=>a.seq-b.seq).map(e=>publicQueryEvent(e,context));}};
 }
 
 export function createMarkdownQueryTools({host,chat,operation,reader}){

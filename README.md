@@ -73,7 +73,7 @@ OntoWeave 是一个开源世界模型项目。我们围绕本体、双时态与�
 
 底层采用原生 Codex Agent 与 Skill，结合 Rust 时态内核及 PostgreSQL 和 pgvector。
 
-> **v0.2.0-alpha.1 源码预览版**面向 macOS 本机单用户。抽取与实体归一质量仍在迭代。行动反馈闭环、外部 Agent MCP 接入及预测仍在建设。详见[版本说明](docs/RELEASE_NOTES.md)。
+> **v0.2.0-alpha.2 源码预览版**面向 macOS 本机单用户。抽取与实体归一质量仍在迭代。行动反馈闭环、外部 Agent MCP 接入及预测仍在建设。详见[版本说明](docs/RELEASE_NOTES.md)。
 
 ## 开始使用
 

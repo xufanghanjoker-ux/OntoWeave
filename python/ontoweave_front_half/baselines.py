@@ -8,7 +8,7 @@ from ontoweave_cq5000.compat import ROOT, sha, dump
 from ontoweave_cq5000.dispatch import verify_skill
 from ontoweave_cq_similarity.core import require
 
-CURRENT_BASELINE = "ontoweave-workbench-0.2.0-alpha.1"
+CURRENT_BASELINE = "ontoweave-workbench-0.2.0-alpha.2"
 MANIFEST = ROOT / "contracts/workbench-runtime-v1/source.json"
 
 

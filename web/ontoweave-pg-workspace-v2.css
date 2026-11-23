@@ -93,3 +93,30 @@
 .pg-workspace .pg-discover .pg-time{margin:0}
 .pg-workspace .pg-discover input[type=search]{width:min(340px,100%)}
 .pg-workspace .pg-graph-diagnostics{margin:12px 0}
+
+.pg-graph-layout:not(.pg-graph-with-selection){grid-template-columns:minmax(0,1fr)}
+.pg-history{margin:6px 0 12px;color:var(--lw-muted)}
+.pg-history>summary{width:max-content;cursor:pointer;color:var(--lw-ink)}
+.pg-history-form{display:flex;flex-wrap:wrap;align-items:start;gap:10px 18px;padding:12px;margin-top:8px;border:1px solid var(--lw-line);border-radius:8px}
+.pg-history-form label{display:grid;gap:5px}
+.pg-history-form input,.pg-ontology-layout input,.pg-source-search-form input{background:#111b15;color:var(--lw-ink);border:1px solid var(--lw-line);border-radius:7px;padding:8px 10px;min-width:0;max-width:100%}
+.pg-history-form summary{cursor:pointer}
+.pg-ontology-layout{display:grid;grid-template-columns:minmax(155px,190px) minmax(0,1fr) minmax(235px,320px);gap:12px;margin-top:12px}
+.pg-ontology-layout:has(.pg-ontology-inspector[hidden]){grid-template-columns:minmax(155px,190px) minmax(0,1fr)}
+.pg-ontology-layout:not(:has(.pg-ontology-browse)){grid-template-columns:minmax(0,1fr) minmax(235px,320px)}
+.pg-ontology-layout:not(:has(.pg-ontology-browse)):has(.pg-ontology-inspector[hidden]){grid-template-columns:minmax(0,1fr)}
+.pg-ontology-browse,.pg-ontology-main,.pg-ontology-inspector{min-width:0}
+.pg-ontology-browse .pg-list{margin-top:8px}
+.pg-ontology-catalog .pg-list li button{display:block;width:100%;text-align:left}
+.pg-ontology-inspector>.pg-panel{margin:0}
+.pg-definitions-table{width:100%;border-collapse:collapse;text-align:left;margin-top:12px;overflow-wrap:anywhere}
+.pg-definitions-table th,.pg-definitions-table td{border-bottom:1px solid var(--lw-line);padding:7px 8px}
+.pg-source-search-form input{width:min(400px,100%)}
+.pg-source-hit{overflow-wrap:anywhere}
+.pg-source-hit p{margin:6px 0}
+.pg-source-hit mark,.pg-source-text mark{background:#cfe4a0;color:#172419}
+@media(max-width:950px){
+ .pg-ontology-layout,.pg-ontology-layout:has(.pg-ontology-inspector[hidden]),
+ .pg-ontology-layout:not(:has(.pg-ontology-browse)){grid-template-columns:minmax(0,1fr)}
+ .pg-ontology-layout .pg-list{grid-template-columns:repeat(auto-fit,minmax(132px,1fr))}
+}

@@ -1,6 +1,6 @@
 {
   "contract": "ontoweave-workbench-source-lock/1",
-  "baseline_id": "ontoweave-workbench-0.2.0-alpha.1",
+  "baseline_id": "ontoweave-workbench-0.2.0-alpha.2",
   "verified_source_successor_sha256": "23c987b48ce870c49375588ccaee4551f0dea2aa9ac918e7b4a229d6012c0b14",
   "files": [
     {
@@ -412,16 +412,20 @@
       "sha256": "ba55698bb8d01101b32215c8440787627096e0c8e30f996067004feece93e08a"
     },
     {
+      "path": "migrations/017-query-sessions-v1.sql",
+      "sha256": "3e3a02cb0f080d9eba8986e0280ea19364a49c6907f05265cc219d6d8b96f786"
+    },
+    {
       "path": "package-lock.json",
-      "sha256": "a5ebe28efe73262788f62f3569bcfcf9ea4e880322f842648065a6574c48f15e"
+      "sha256": "5f210697a3b028c06d6f86871a9da42a9b296bab21eb0842a7079013c49176a8"
     },
     {
       "path": "package.json",
-      "sha256": "1007d1ade8bfbf1771dcb340fd285b1e2a9a99bda3cf6b2e5bbbad79c228789c"
+      "sha256": "8da0ac7c26b9baf3110a88c48aea8b287f7952d91f4405656d23febe5f40e05b"
     },
     {
       "path": "python/ontoweave_api/app.py",
-      "sha256": "79a71563538edd930a319ff6d8d22cabeb1d0a8c5be1056c54c0f4ae11caaf92"
+      "sha256": "71a792c3f3c26c6c6ede606f3817ad833219a6cce4870b4c90e1652a5d40bb96"
     },
     {
       "path": "python/ontoweave_api/contracts.py",
@@ -434,6 +438,10 @@
     {
       "path": "python/ontoweave_api/requirements.lock",
       "sha256": "850ee8875e45915ad37a9bc94a5359ab726e8825d3be9c0dbf73c604ab749029"
+    },
+    {
+      "path": "python/ontoweave_api/workbench_reads.py",
+      "sha256": "7d985b3bdea98320fd58fa44b07ac4758f490f6be43cdde101764cdd57d32c7d"
     },
     {
       "path": "python/ontoweave_cq/__init__.py",
@@ -541,7 +549,7 @@
     },
     {
       "path": "python/ontoweave_front_half/baselines.py",
-      "sha256": "e26407abd494282ceb99f40e4d9f84c4b5538537f45fb668d582d5b177394351"
+      "sha256": "4d59f4971be929cbb2ca86e81cdf886cbd8b812391cfcd4d50ba35bc56edd665"
     },
     {
       "path": "python/ontoweave_front_half/native-rpc-request.mjs",
@@ -613,7 +621,7 @@
     },
     {
       "path": "python/ontoweave_identity/native-runtime.mjs",
-      "sha256": "5c7035f50e8f6bf717926fefdfaf49a3a1454e4836ef430f30a64b517ea092b8"
+      "sha256": "33051daea4a5ec0c6d628981a68b14c109f19d77a71e960b36653431162cd08b"
     },
     {
       "path": "python/ontoweave_identity/native.mjs",
@@ -788,6 +796,14 @@
       "sha256": "64881d8f98f854cf292c08ef8f72e6a0efe070de256b58a4bb1293cf89382242"
     },
     {
+      "path": "python/ontoweave_query_sessions/__init__.py",
+      "sha256": "4f4e1e2e3a6d19333beedcd1c6553583ca07701a0c0bbb9755a5bf5d788dff52"
+    },
+    {
+      "path": "python/ontoweave_query_sessions/routes.py",
+      "sha256": "2175bade7c268cd3cf202572eb8e96668a4848c7fb57e5576bb30d4e165cdb5c"
+    },
+    {
       "path": "python/ontoweave_retrieval_contracts/__init__.py",
       "sha256": "7227e0f7c286f85cbbc1855130bd5a0895400fe7ba35914f06f4702885f721d2"
     },
@@ -804,24 +820,28 @@
       "sha256": "2b852597ef66db1aa5a7436da04d3e1965d6ab29bc9808cf40d3f069c5b2c663"
     },
     {
+      "path": "scripts/setup-ontoweave-parser.mjs",
+      "sha256": "320bc91bcc26d8db00952b823553807a5e2c801adf349680427867d37c91a4bf"
+    },
+    {
       "path": "scripts/setup-ontoweave-runtime.mjs",
       "sha256": "1b912464ac20a2a7b37e542f88aae19a688c0051ea534176711250950ef63aa1"
     },
     {
       "path": "scripts/start-ontoweave-api.py",
-      "sha256": "5b0a85fd84a1c962c8f6d448f645b8f1b78d84170bd0e7246a3b1e1a97c34b49"
+      "sha256": "e1a853c76534a89384a3c342537b69ba11eec053af286f70cef05a9563536dcb"
     },
     {
       "path": "scripts/start-ontoweave.mjs",
-      "sha256": "94be314d55d62f81c2d6254c3bb598703a55a2d461a6bbc919705d00e82462c3"
-    },
-    {
-      "path": "web/app.mjs",
-      "sha256": "95c8d860a498e4edbdaeb02faed7e3ef84c3c1998c8025902573c60a2de8cf35"
+      "sha256": "bbcd3e02d58c81bfa6605b939c8e4b47e631f8bb882b3792ace25523554fc28f"
     },
     {
       "path": "web/assets/graph-view.mjs",
       "sha256": "b8cd16f6d6ea75d90afc7a1f86659e2ed5c453e5460b5ccdd4da02e29212abe0"
+    },
+    {
+      "path": "web/atomic-file.mjs",
+      "sha256": "5e7f55c8ec67925dba5d3592a30e97ae543fc1b70337885a14b56938e8f1cb99"
     },
     {
       "path": "web/docling_hybrid_chunk_worker.py",
@@ -836,8 +856,8 @@
       "sha256": "e467d80f1f28056d6c47c5a059bbba0f659d34d23d5be1106d21dce0f9645d03"
     },
     {
-      "path": "web/index.html",
-      "sha256": "80970c270d5e102f06c09ff8df601150369d07c500df1d4e78b6f639991ed3ad"
+      "path": "web/documents.mjs",
+      "sha256": "76553908a827202192e604a6ab6ff583dc031759cf80afd4986c4656f9bfe349"
     },
     {
       "path": "web/lightog-chat-client-v1.mjs",
@@ -862,18 +882,6 @@
     {
       "path": "web/lightog-workspace-v1.css",
       "sha256": "fb6794ac1cad548bcb3a05b41e30c10b9ac1ac641906556d654dd3ac84d05a29"
-    },
-    {
-      "path": "web/lightog-workspace-v1.mjs",
-      "sha256": "af2bf5595bea7072f7d22335aeb677e4e0a0f2e32c85a558fe6f65a587a2b873"
-    },
-    {
-      "path": "web/lightog-workspace-view-v1.mjs",
-      "sha256": "1d0060470cf60266951ad818fa3d0733de502c45cdd38d524b6cee342a37b85c"
-    },
-    {
-      "path": "web/manage.mjs",
-      "sha256": "e99d9f3f11ad1ab85b387ef1364f02040a764b326bac8b9c933ae47f29246104"
     },
     {
       "path": "web/native-agent-material-view-v1.mjs",
@@ -913,7 +921,7 @@
     },
     {
       "path": "web/native-query-chat-v1.mjs",
-      "sha256": "5b6fa779500d4cffd1747540b4cafe3a82262b6d5de58f70e2d96840ccae4192"
+      "sha256": "c12b74ed7cad57dfbb8c221c7d1d667051d1e1088bb43de3734ebd6a05a24a24"
     },
     {
       "path": "web/native-query-http-v1.mjs",
@@ -929,7 +937,7 @@
     },
     {
       "path": "web/native-query-product-v1.mjs",
-      "sha256": "f51b2a7162ba9c9a850ea6cee011f4b0114865331470a391e890a69b6ae59b55"
+      "sha256": "fcb95b9fbf68161a192d04a318b66508a7cbca07dc7e05db415db94184da2fe6"
     },
     {
       "path": "web/native-query-rounds-v3.mjs",
@@ -938,6 +946,14 @@
     {
       "path": "web/native-query-runtime-v1.mjs",
       "sha256": "85e82edff673c1d0a66c81f3ad2ac15b40d99466d0fefb67215ba0fc7fb4b7d4"
+    },
+    {
+      "path": "web/native-query-session-store-v1.mjs",
+      "sha256": "1994a21b84183a41f22d908a225ddd09df6973049f06ad8570f7ee387be9c6d1"
+    },
+    {
+      "path": "web/native-query-session-worker-v1.mjs",
+      "sha256": "e7a2625b722264a9f945c342c1276cf40f7d56469b2b6dc34ecc1848c781a230"
     },
     {
       "path": "web/native-query-view-v1.mjs",
@@ -952,32 +968,24 @@
       "sha256": "f39667bd4a2002ca10afe8293dbf702a80e33656391017ae5b095ac91250d458"
     },
     {
-      "path": "web/ontoweave-pg-api-v1.mjs",
-      "sha256": "cb842394150016012fdd1df38717f3f3ceac556499b20ed9e9af26c1c9171310"
-    },
-    {
       "path": "web/ontoweave-pg-api-v2.mjs",
       "sha256": "120fadb3b6afc1abc4efb34baac9b0a56a180e65bc1faebb08b84241dae6e914"
     },
     {
+      "path": "web/ontoweave-pg-gateway.mjs",
+      "sha256": "c1395440d73dd17044d8b03a6552bb0fc8929b5321fb3709ca075ff80ec4dad1"
+    },
+    {
       "path": "web/ontoweave-pg-query-registration-v1.mjs",
-      "sha256": "7b452263f385501cddb5c1ac931f13d0d54f11cca035c6465e83d38faec0bc14"
-    },
-    {
-      "path": "web/ontoweave-pg-workspace-v1.css",
-      "sha256": "cca6c96f3657bc7242970fddcae5de3c4a7c785725aa5de92ef68e20277ab5e5"
-    },
-    {
-      "path": "web/ontoweave-pg-workspace-v1.mjs",
-      "sha256": "45af8088e31ae179f16487bd15f6a063b27ff1df18fdee64e71d9782949a32b3"
+      "sha256": "4b95ffc10303ce432986b90d692ae50ae4043afc769a34334eb515e1e284ae2e"
     },
     {
       "path": "web/ontoweave-pg-workspace-v2.css",
-      "sha256": "bc6dbad3ea73ae70d2c8734bd5d0d10da6bb2b5d2d54cc67fc37305cde319959"
+      "sha256": "d955a1253b5e864c23b8d260e4f5a95a50113e02bc3a8d3e58c9bc835516c4ad"
     },
     {
       "path": "web/ontoweave-pg-workspace-v2.mjs",
-      "sha256": "7b776c8ad2d767b5ca170c94bbff3a66dc71ab2ee7eb4217c7cf624738e2bda0"
+      "sha256": "12208e02622f9bc8f73c88a4a85841e241ade4fda8e96588b9344b496194ece9"
     },
     {
       "path": "web/parser-smoke.mjs",
@@ -993,11 +1001,7 @@
     },
     {
       "path": "web/runtime.mjs",
-      "sha256": "384c654c2c430396f5dd278b183823bfc030e34f13ec1c8bcc7d31bed8c2c528"
-    },
-    {
-      "path": "web/server.mjs",
-      "sha256": "c4d8f706f6ce5e7bceb7784ae8931e5622454065a7536b1baa4eb0f57dddd3e3"
+      "sha256": "f229996477f87a5f2ebdec89b754938372a4d08180a08daa9dc22ba3878c6c06"
     },
     {
       "path": "web/setup_parser.py",
@@ -1012,12 +1016,8 @@
       "sha256": "90eeb2db80b87d403689f02b2d4a93af1416799d841edfb2130b8387bad82dad"
     },
     {
-      "path": "web/unified-workbench-controller-v2.mjs",
-      "sha256": "87b693fb6541c9ae30f96ffdc2935dcb9c56b566a0efe55743077df184be5fed"
-    },
-    {
       "path": "web/unified-workbench-v2.assets.json",
-      "sha256": "7ed0ea752b9ed059b0eef7e4e6e6a98c187de5549050f8c530cf858fcb2b2309"
+      "sha256": "96174a638aeaacbd1c5caf9021e06b816e8ec41e6955a407a57ab6b57c3f4ec7"
     },
     {
       "path": "web/unified-workbench-v2.html",
@@ -1025,11 +1025,15 @@
     },
     {
       "path": "web/unified-workbench-v2.mjs",
-      "sha256": "a8d2294a87ac6554c3c638474d186e80769d898be621c664f459cf9ff742c09f"
+      "sha256": "d2bf54caf3abc14770bd27fb6652f1f3079d0945ede246de2226f6f739c16b4a"
     },
     {
       "path": "web/unified-workbench-view-v2.mjs",
-      "sha256": "d4bbc25f2a50653ee109491a5a40d5a06510ee07863c0ecfa32c2faed24160f4"
+      "sha256": "59e257e8533403bc7b11b48c0ca546fa5d3297f1b78f4beb4a1dc8e3db0c55b1"
+    },
+    {
+      "path": "web/workbench-assets.mjs",
+      "sha256": "564445425c293fd92cd839b154e6314969da09a8ece7b2d1cfb5c455fa62c4cf"
     }
   ]
 }
